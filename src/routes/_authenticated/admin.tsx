@@ -336,7 +336,6 @@ type Pricing = {
 const FIELDS: { key: keyof Pricing; label: string }[] = [
   { key: "base_fare", label: "Base fare" },
   { key: "per_km", label: "Per km" },
-  { key: "per_minute", label: "Per minute" },
   { key: "minimum_fare", label: "Minimum fare" },
   { key: "commission_percent", label: "Commission %" },
   { key: "multiplier_tricycle", label: "Tricycle ×" },

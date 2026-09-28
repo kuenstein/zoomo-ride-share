@@ -365,7 +365,7 @@ function RidePage() {
 
   const baseFare = useMemo(() => {
     if (!pricing || !route) return null;
-    return estimateFare(pricing, vehicle, route.distanceKm, route.durationMin, airport);
+    return estimateFare(pricing, vehicle, route.distanceKm, airport);
   }, [pricing, route, vehicle, airport]);
 
   const applyPromo = async () => {
@@ -599,7 +599,7 @@ function RidePage() {
               <>
                 <div className="space-y-2">
                   {VEHICLE_OPTIONS.map((opt) => {
-                    const fare = estimateFare(pricing, opt.type, route.distanceKm, route.durationMin, airport);
+                    const fare = estimateFare(pricing, opt.type, route.distanceKm, airport);
                     const selected = vehicle === opt.type;
                     return (
                       <button
@@ -615,7 +615,7 @@ function RidePage() {
                             {opt.name} · {opt.seats} seat{opt.seats > 1 ? "s" : ""}
                           </span>
                           <span className="block text-xs text-muted-foreground">
-                            {route.distanceKm} km · {etaFor(opt.type, route.durationMin)} min · {opt.description}
+                            {route.distanceKm} km · ~{etaFor(opt.type, route.durationMin)} min ETA · {opt.description}
                           </span>
                         </span>
                         <span className="text-sm font-bold">{formatMoney(fare)}</span>
