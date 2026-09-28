@@ -20,6 +20,7 @@ import { Route as AuthenticatedRideRouteImport } from './routes/_authenticated/r
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedActivityRideIdRouteImport } from './routes/_authenticated/activity.$rideId'
 import { Route as AuthenticatedDriverEarningsRouteImport } from './routes/_authenticated/driver.earnings'
+import { Route as ApiPublicPaymongoWebhookRouteImport } from './routes/api/public/paymongo-webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -77,6 +78,12 @@ const AuthenticatedDriverEarningsRoute =
     path: '/earnings',
     getParentRoute: () => AuthenticatedDriverRoute,
   } as any)
+const ApiPublicPaymongoWebhookRoute =
+  ApiPublicPaymongoWebhookRouteImport.update({
+    id: '/api/public/paymongo-webhook',
+    path: '/api/public/paymongo-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/wallet': typeof AuthenticatedWalletRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/wallet': typeof AuthenticatedWalletRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/_authenticated/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/activity/$rideId'
     | '/driver/earnings'
+    | '/api/public/paymongo-webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/wallet'
     | '/activity/$rideId'
     | '/driver/earnings'
+    | '/api/public/paymongo-webhook'
   id:
     | '__root__'
     | '/'
@@ -154,12 +166,14 @@ export interface FileRouteTypes {
     | '/_authenticated/wallet'
     | '/_authenticated/activity/$rideId'
     | '/_authenticated/driver/earnings'
+    | '/api/public/paymongo-webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicPaymongoWebhookRoute: typeof ApiPublicPaymongoWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -241,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverEarningsRouteImport
       parentRoute: typeof AuthenticatedDriverRoute
     }
+    '/api/public/paymongo-webhook': {
+      id: '/api/public/paymongo-webhook'
+      path: '/api/public/paymongo-webhook'
+      fullPath: '/api/public/paymongo-webhook'
+      preLoaderRoute: typeof ApiPublicPaymongoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -293,6 +314,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicPaymongoWebhookRoute: ApiPublicPaymongoWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
