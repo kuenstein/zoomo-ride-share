@@ -25,6 +25,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { normalizePhMobile, formatPhMobile, PHONE_PLACEHOLDER } from "@/lib/locale";
 import { setStoredMode, useAppMode } from "@/lib/nav";
+import { LegalAndDelete, NotificationSettings, TrustedContacts } from "@/components/AccountExtras";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -224,6 +225,10 @@ function AccountPage() {
           Save changes
         </Button>
       </div>
+
+      {user && <NotificationSettings userId={user.id} />}
+      {user && mode === "rider" && <TrustedContacts userId={user.id} />}
+      <LegalAndDelete onDeleted={signOut} />
 
       <Button
         variant="outline"
