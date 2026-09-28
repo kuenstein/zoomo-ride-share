@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -162,7 +162,6 @@ function AddressField({
 function RidePage() {
   const { user, profile } = useAuth();
   const search = Route.useSearch();
-  const navigate = useNavigate();
   const prefillPickup =
     search.pLat != null && search.pLng != null
       ? { lat: search.pLat, lng: search.pLng, address: search.pAddr ?? "Pickup" }
