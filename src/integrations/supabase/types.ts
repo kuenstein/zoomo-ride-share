@@ -184,6 +184,42 @@ export type Database = {
         }
         Relationships: []
       }
+      payout_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          notes: string | null
+          resolved_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pricing_settings: {
         Row: {
           airport_fare_bike: number
@@ -200,6 +236,7 @@ export type Database = {
           currency: string
           extra_passenger_fee: number
           id: number
+          max_driver_debt: number
           minimum_fare: number
           minimum_fare_bike: number
           minimum_fare_tricycle: number
@@ -230,6 +267,7 @@ export type Database = {
           currency?: string
           extra_passenger_fee?: number
           id?: number
+          max_driver_debt?: number
           minimum_fare?: number
           minimum_fare_bike?: number
           minimum_fare_tricycle?: number
@@ -260,6 +298,7 @@ export type Database = {
           currency?: string
           extra_passenger_fee?: number
           id?: number
+          max_driver_debt?: number
           minimum_fare?: number
           minimum_fare_bike?: number
           minimum_fare_tricycle?: number
@@ -715,7 +754,15 @@ export type Database = {
     Functions: {
       accept_ride: { Args: { _ride_id: string }; Returns: Json }
       add_tip: { Args: { _amount: number; _ride_id: string }; Returns: Json }
+      admin_resolve_payout: {
+        Args: { _id: string; _notes?: string; _status: string }
+        Returns: Json
+      }
       admin_stats: { Args: never; Returns: Json }
+      admin_wallet_adjust: {
+        Args: { _amount: number; _note?: string; _user_id: string }
+        Returns: Json
+      }
       calculate_fare: {
         Args: {
           _km: number
@@ -729,6 +776,15 @@ export type Database = {
         Returns: Json
       }
       credit_paid_checkout: { Args: { _session_id: string }; Returns: Json }
+      driver_debt_blocked: { Args: { _user_id: string }; Returns: boolean }
+      driver_set_ride_status: {
+        Args: {
+          _reason?: string
+          _ride_id: string
+          _status: Database["public"]["Enums"]["ride_status"]
+        }
+        Returns: Json
+      }
       driver_vehicle_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["vehicle_type"]
@@ -762,6 +818,10 @@ export type Database = {
           lng: number
         }[]
       }
+      request_payout: {
+        Args: { _amount: number; _method: string }
+        Returns: Json
+      }
       ride_fare: {
         Args: {
           _dlat: number
@@ -773,6 +833,10 @@ export type Database = {
           _type: Database["public"]["Enums"]["vehicle_type"]
         }
         Returns: number
+      }
+      rider_cancel_ride: {
+        Args: { _reason?: string; _ride_id: string }
+        Returns: Json
       }
       shares_ride: { Args: { _a: string; _b: string }; Returns: boolean }
       validate_promo: {
