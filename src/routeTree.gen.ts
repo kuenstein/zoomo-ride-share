@@ -28,6 +28,7 @@ import { Route as AuthenticatedDriverIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedDriverEarningsRouteImport } from './routes/_authenticated/driver.earnings'
 import { Route as AuthenticatedDriverTripsRouteImport } from './routes/_authenticated/driver.trips'
 import { Route as ApiPublicPaymongoWebhookRouteImport } from './routes/api/public/paymongo-webhook'
+import { Route as ApiPublicPushDispatchRouteImport } from './routes/api/public/push-dispatch'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -128,6 +129,11 @@ const ApiPublicPaymongoWebhookRoute =
     path: '/api/public/paymongo-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPushDispatchRoute = ApiPublicPushDispatchRouteImport.update({
+  id: '/api/public/push-dispatch',
+  path: '/api/public/push-dispatch',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/driver/': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRoutesByTo {
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/driver': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRoutesById {
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/_authenticated/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/_authenticated/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/api/public/push-dispatch': typeof ApiPublicPushDispatchRoute
   '/_authenticated/driver/': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRouteTypes {
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/driver/earnings'
     | '/driver/trips'
     | '/api/public/paymongo-webhook'
+    | '/api/public/push-dispatch'
     | '/driver/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/driver/earnings'
     | '/driver/trips'
     | '/api/public/paymongo-webhook'
+    | '/api/public/push-dispatch'
     | '/driver'
   id:
     | '__root__'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_authenticated/driver/earnings'
     | '/_authenticated/driver/trips'
     | '/api/public/paymongo-webhook'
+    | '/api/public/push-dispatch'
     | '/_authenticated/driver/'
   fileRoutesById: FileRoutesById
 }
@@ -264,6 +276,7 @@ export interface RootRouteChildren {
   SignupDriverRoute: typeof SignupDriverRoute
   SignupRiderRoute: typeof SignupRiderRoute
   ApiPublicPaymongoWebhookRoute: typeof ApiPublicPaymongoWebhookRoute
+  ApiPublicPushDispatchRoute: typeof ApiPublicPushDispatchRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -401,6 +414,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPaymongoWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/push-dispatch': {
+      id: '/api/public/push-dispatch'
+      path: '/api/public/push-dispatch'
+      fullPath: '/api/public/push-dispatch'
+      preLoaderRoute: typeof ApiPublicPushDispatchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -455,6 +475,7 @@ const rootRouteChildren: RootRouteChildren = {
   SignupDriverRoute: SignupDriverRoute,
   SignupRiderRoute: SignupRiderRoute,
   ApiPublicPaymongoWebhookRoute: ApiPublicPaymongoWebhookRoute,
+  ApiPublicPushDispatchRoute: ApiPublicPushDispatchRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
