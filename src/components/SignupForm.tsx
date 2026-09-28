@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CONSENT_VERSION } from "@/lib/legal";
 
 export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redirect?: string | undefined }) {
   const navigate = useNavigate();
@@ -20,22 +22,26 @@ export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redir
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
+  const [agree, setAgree] = useState(false);
   const isDriver = role === "driver";
   const home = isDriver ? "/driver" : (redirect ?? "/ride");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agree) {
+      toast.error("Please agree to the Terms and Privacy Policy");
+      return;
+    }
     setBusy(true);
     try {
       const normPhone = phone.trim() ? normalizePhMobile(phone) : null;
-      if (isDriver && !normPhone) throw new Error("Drivers need a valid PH mobile number, e.g. 0917 123 4567");
-      if (phone.trim() && !normPhone) throw new Error("Enter a valid PH mobile number, e.g. 0917 123 4567");
+      if (!normPhone) throw new Error("Enter a valid PH mobile number, e.g. 0917 123 4567");
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}${home}`,
-          data: { full_name: fullName, phone: normPhone, role },
+          data: { full_name: fullName, phone: normPhone, role, consent_version: CONSENT_VERSION },
         },
       });
       if (error) throw error;
@@ -54,6 +60,10 @@ export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redir
   };
 
   const google = async () => {
+    if (!agree) {
+      toast.error("Please agree to the Terms and Privacy Policy first");
+      return;
+    }
     setBusy(true);
     const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth?redirect=${encodeURIComponent(home)}` });
     if (result.error) {
@@ -102,7 +112,7 @@ export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redir
                 <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone{isDriver ? "" : " (optional)"}</Label>
+                <Label htmlFor="phone">PH mobile number</Label>
                 <Input
                   id="phone"
                   type="tel"
@@ -110,7 +120,7 @@ export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redir
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder={PHONE_PLACEHOLDER}
-                  required={isDriver}
+                  required
                 />
               </div>
               <div className="space-y-2">
@@ -128,7 +138,15 @@ export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redir
                   minLength={6}
                 />
               </div>
-              <Button type="submit" className="w-full" disabled={busy}>
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox checked={agree} onCheckedChange={(v) => setAgree(v === true)} className="mt-0.5" aria-label="Agree to terms" />
+                <span className="text-muted-foreground">
+                  I agree to the{" "}
+                  <Link to="/terms" target="_blank" className="font-semibold text-accent">Terms of Service</Link> and{" "}
+                  <Link to="/privacy" target="_blank" className="font-semibold text-accent">Privacy Policy</Link>, including the use of my location during trips.
+                </span>
+              </label>
+              <Button type="submit" className="w-full" disabled={busy || !agree}>
                 {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : isDriver ? "Create driver account" : "Create account"}
               </Button>
             </form>

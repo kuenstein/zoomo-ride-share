@@ -178,6 +178,8 @@ function Landing() {
             <Link to="/" hash="about" className="hover:text-foreground">About</Link>
             <Link to="/" hash="how-it-works" className="hover:text-foreground">How it works</Link>
             <Link to="/signup/driver" className="hover:text-foreground">Become a driver</Link>
+            <Link to="/terms" className="hover:text-foreground">Terms</Link>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
             {user ? (
               <Link to={appHome} className="font-medium text-accent">Open app</Link>
             ) : (

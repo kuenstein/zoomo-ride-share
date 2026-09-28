@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DriverDocuments, DOC_TYPES, useDriverDocs } from "@/components/DriverDocuments";
+import { SosButton } from "@/components/SosButton";
+import { playRequestAlert, unlockAudio, useTitleFlash, useWakeLock } from "@/lib/alerts";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { setStoredMode } from "@/lib/nav";
 import { useQuery } from "@tanstack/react-query";
@@ -51,13 +54,15 @@ function DriverPage() {
       <StatusScreen
         title="Application under review"
         text="An admin is reviewing your documents. You'll be able to go online as soon as you're approved."
+        userId={user.id}
       />
     );
   if (driver.status === "rejected")
     return (
       <StatusScreen
         title="Application not approved"
-        text={driver.rejection_reason ?? "Contact support to resubmit your details."}
+        text={driver.rejection_reason ?? "Fix the documents below, then contact support to be reviewed again."}
+        userId={user.id}
       />
     );
   if (driver.status === "suspended")
@@ -66,13 +71,19 @@ function DriverPage() {
   return <DriverHome />;
 }
 
-function StatusScreen({ title, text }: { title: string; text: string }) {
+function StatusScreen({ title, text, userId }: { title: string; text: string; userId?: string }) {
   const navigate = useNavigate();
   return (
-    <div className="mx-auto flex max-w-lg flex-col items-center justify-center px-6 py-24 text-center">
+    <div className="mx-auto flex max-w-lg flex-col items-center px-6 py-16 text-center">
       <Clock className="h-10 w-10 text-accent" />
       <h1 className="mt-4 text-2xl font-bold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{text}</p>
+      {userId && (
+        <div className="mt-6 w-full text-left">
+          <p className="mb-2 text-sm font-semibold">Your documents</p>
+          <DriverDocuments userId={userId} />
+        </div>
+      )}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Button asChild variant="outline">
           <Link to="/account">Go to account</Link>
@@ -88,6 +99,7 @@ function StatusScreen({ title, text }: { title: string; text: string }) {
 function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
   const { user } = useAuth();
   const [license, setLicense] = useState("");
+  const [expiry, setExpiry] = useState("");
   const [type, setType] = useState<VehicleType>("tricycle");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
@@ -95,16 +107,22 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
   const [plate, setPlate] = useState("");
   const [orcr, setOrcr] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: docs } = useDriverDocs(user?.id);
+  const docsDone = DOC_TYPES.every((d) => docs?.some((x) => x.doc_type === d.type));
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (!docsDone) {
+      toast.error("Upload all four documents first");
+      return;
+    }
     setBusy(true);
     try {
       await supabase.from("user_roles").insert({ user_id: user.id, role: "driver" });
       const { data: d, error } = await supabase
         .from("drivers")
-        .insert({ user_id: user.id, license_number: license })
+        .insert({ user_id: user.id, license_number: license, license_expiry: expiry || null })
         .select()
         .single();
       if (error) throw error;
@@ -130,6 +148,10 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
         <div className="space-y-2">
           <Label htmlFor="lic">LTO driver's license number</Label>
           <Input id="lic" value={license} onChange={(e) => setLicense(e.target.value.toUpperCase())} placeholder="e.g. G12-34-567890" required />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="exp">License expiry date</Label>
+          <Input id="exp" type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} required />
         </div>
         <div className="space-y-2">
           <Label>Vehicle type</Label>
@@ -171,8 +193,12 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
           <Label htmlFor="orcr">OR/CR number</Label>
           <Input id="orcr" value={orcr} onChange={(e) => setOrcr(e.target.value.toUpperCase())} placeholder="Official Receipt / Certificate of Registration no." required />
         </div>
-        <Button type="submit" className="w-full" disabled={busy}>
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit application"}
+        <div className="space-y-2">
+          <Label>Documents (photo or PDF, under 5 MB)</Label>
+          {user && <DriverDocuments userId={user.id} />}
+        </div>
+        <Button type="submit" className="w-full" disabled={busy || !docsDone}>
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : docsDone ? "Submit application" : "Upload all 4 documents to submit"}
         </Button>
       </form>
     </div>
@@ -180,7 +206,7 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
 }
 
 function DriverHome() {
-  const { user, driver, refresh } = useAuth();
+  const { user, driver, refresh, profile } = useAuth();
   const [online, setOnline] = useState(driver?.is_online ?? false);
   const [pos, setPos] = useState<LatLng | null>(null);
   const [incoming, setIncoming] = useState<Ride | null>(null);
@@ -235,8 +261,20 @@ function DriverHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, online]);
 
+  useWakeLock(online);
+  useEffect(() => {
+    if (incoming?.id) playRequestAlert();
+  }, [incoming?.id]);
+  const licenseExpired = !!driver?.license_expiry && driver.license_expiry < new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
+  useTitleFlash(!!incoming);
+
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
+    if (next) unlockAudio();
+    if (next && licenseExpired) {
+      toast.error("Your driver's license has expired");
+      return;
+    }
     if (next && !vehicleOk) {
       toast.error("Update your vehicle type to Tricycle or Motorcycle first");
       return;
@@ -455,6 +493,12 @@ function DriverHome() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {licenseExpired && (
+          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold">Your driver's license has expired</p>
+            <p className="text-muted-foreground">You can't go online until an admin records your renewed license. Contact Zoomo support with your new license.</p>
+          </div>
+        )}
         {!vehicleOk && (
           <div className="mb-3 space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
             <p className="font-semibold">Your vehicle type is no longer supported</p>
@@ -473,9 +517,20 @@ function DriverHome() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold">{STATUS_LABEL[activeRide.status]}</p>
-              <Badge variant="secondary">
-                {formatMoney(Number(activeRide.fare_estimate) - Number(activeRide.discount))}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <SosButton
+                  trip={{
+                    rideId: activeRide.id,
+                    driverName: `${profile?.full_name ?? "Driver"} (me, driver)`,
+                    vehicle: vehicle?.type === "bike" ? "Motorcycle" : "Tricycle",
+                    pickup: activeRide.pickup_address,
+                    dropoff: activeRide.dropoff_address,
+                  }}
+                />
+                <Badge variant="secondary">
+                  {formatMoney(Number(activeRide.fare_estimate) - Number(activeRide.discount))}
+                </Badge>
+              </div>
             </div>
             <div className="space-y-1 rounded-2xl bg-secondary p-3 text-sm">
               <p className="flex gap-2">

@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string | null
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value?: string | null
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string | null
+        }
+        Relationships: []
+      }
+      driver_documents: {
+        Row: {
+          created_at: string
+          doc_type: string
+          id: string
+          reviewed_at: string | null
+          reviewer_notes: string | null
+          status: string
+          storage_path: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          storage_path: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewer_notes?: string | null
+          status?: string
+          storage_path?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       driver_feedback: {
         Row: {
           comment: string | null
@@ -90,6 +144,7 @@ export type Database = {
           created_at: string
           id: string
           is_online: boolean
+          license_expiry: string | null
           license_number: string
           rejection_reason: string | null
           status: Database["public"]["Enums"]["driver_status"]
@@ -101,6 +156,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_online?: boolean
+          license_expiry?: string | null
           license_number: string
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["driver_status"]
@@ -112,6 +168,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_online?: boolean
+          license_expiry?: string | null
           license_number?: string
           rejection_reason?: string | null
           status?: Database["public"]["Enums"]["driver_status"]
@@ -121,29 +178,71 @@ export type Database = {
         }
         Relationships: []
       }
+      geo_cache: {
+        Row: {
+          created_at: string
+          key: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      geo_rate: {
+        Row: {
+          bucket: string
+          hits: number
+          user_id: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          user_id: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
           created_at: string
           id: string
+          pushed_at: string | null
           read: boolean
           title: string
+          url: string | null
           user_id: string
         }
         Insert: {
           body?: string | null
           created_at?: string
           id?: string
+          pushed_at?: string | null
           read?: boolean
           title: string
+          url?: string | null
           user_id: string
         }
         Update: {
           body?: string | null
           created_at?: string
           id?: string
+          pushed_at?: string | null
           read?: boolean
           title?: string
+          url?: string | null
           user_id?: string
         }
         Relationships: []
@@ -319,7 +418,10 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          consent_at: string | null
+          consent_version: string | null
           created_at: string
+          deleted_at: string | null
           full_name: string
           id: string
           phone: string | null
@@ -329,7 +431,10 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          consent_at?: string | null
+          consent_version?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name?: string
           id: string
           phone?: string | null
@@ -339,7 +444,10 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          consent_at?: string | null
+          consent_version?: string | null
           created_at?: string
+          deleted_at?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -388,6 +496,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ratings: {
         Row: {
           comment: string | null
@@ -419,6 +557,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "ratings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reports: {
+        Row: {
+          admin_notes: string | null
+          category: string
+          created_at: string
+          details: string
+          id: string
+          reporter_id: string
+          ride_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category: string
+          created_at?: string
+          details: string
+          id?: string
+          reporter_id: string
+          ride_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string
+          created_at?: string
+          details?: string
+          id?: string
+          reporter_id?: string
+          ride_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
@@ -566,6 +748,56 @@ export type Database = {
         }
         Relationships: []
       }
+      safety_incidents: {
+        Row: {
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          notes: string | null
+          reporter_id: string
+          reporter_role: string
+          resolved_at: string | null
+          ride_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          reporter_id: string
+          reporter_role: string
+          resolved_at?: string | null
+          ride_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          notes?: string | null
+          reporter_id?: string
+          reporter_role?: string
+          resolved_at?: string | null
+          ride_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "safety_incidents_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_places: {
         Row: {
           address: string
@@ -623,6 +855,30 @@ export type Database = {
           id?: string
           name?: string
           radius_km?: number
+        }
+        Relationships: []
+      }
+      trusted_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          phone: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -753,6 +1009,7 @@ export type Database = {
     }
     Functions: {
       accept_ride: { Args: { _ride_id: string }; Returns: Json }
+      accept_terms: { Args: { _version: string }; Returns: Json }
       add_tip: { Args: { _amount: number; _ride_id: string }; Returns: Json }
       admin_resolve_payout: {
         Args: { _id: string; _notes?: string; _status: string }
@@ -777,6 +1034,11 @@ export type Database = {
       }
       credit_paid_checkout: { Args: { _session_id: string }; Returns: Json }
       driver_debt_blocked: { Args: { _user_id: string }; Returns: boolean }
+      driver_docs_complete: {
+        Args: { _approved_only: boolean; _user_id: string }
+        Returns: boolean
+      }
+      driver_license_expired: { Args: { _user_id: string }; Returns: boolean }
       driver_set_ride_status: {
         Args: {
           _reason?: string
@@ -790,6 +1052,7 @@ export type Database = {
         Returns: Database["public"]["Enums"]["vehicle_type"]
       }
       expire_stale_rides: { Args: never; Returns: number }
+      geo_hit: { Args: { _limit: number; _user: string }; Returns: boolean }
       has_active_ride_with: {
         Args: { _driver: string; _rider: string }
         Returns: boolean
@@ -809,6 +1072,7 @@ export type Database = {
         Args: { _lat: number; _lng: number }
         Returns: boolean
       }
+      launch_db_status: { Args: never; Returns: Json }
       nearby_drivers: {
         Args: { _lat: number; _lng: number; _radius_km?: number }
         Returns: {
@@ -817,6 +1081,10 @@ export type Database = {
           lat: number
           lng: number
         }[]
+      }
+      raise_sos: {
+        Args: { _lat?: number; _lng?: number; _ride_id: string }
+        Returns: Json
       }
       request_payout: {
         Args: { _amount: number; _method: string }

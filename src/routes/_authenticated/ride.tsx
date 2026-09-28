@@ -39,6 +39,7 @@ import { VEHICLE_OPTIONS, VEHICLE_LABEL, vehicleLabel, estimateFare, extrasFee, 
 import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
 import { haversineKm } from "@/lib/geo";
 import { TripAssistant } from "@/components/TripAssistant";
+import { SosButton } from "@/components/SosButton";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -106,7 +107,7 @@ function AddressField({
       void searchAddress(query)
         .then(setResults)
         .finally(() => setLoading(false));
-    }, 450);
+    }, 350);
     return () => clearTimeout(t);
   }, [query, open]);
 
@@ -610,6 +611,11 @@ function RidePage() {
 
             {route && pricing && !outsideArea && (
               <>
+                {route.fallback && (
+                  <p className="rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
+                    Couldn't load the road route — fares use an approximate distance.
+                  </p>
+                )}
                 <div className="space-y-2">
                   {VEHICLE_OPTIONS.map((opt) => {
                     const fare = estimateFare(pricing, opt.type, route.distanceKm, airport);
@@ -776,9 +782,23 @@ function TrackingPanel({
             {ride.payment_method}
           </p>
         </div>
-        <Badge variant="secondary">
-          {vehicleLabel(ride.vehicle_type)}
-        </Badge>
+        <div className="flex items-center gap-2">
+          {["accepted", "arriving", "in_progress"].includes(ride.status) && (
+            <SosButton
+              trip={{
+                rideId: ride.id,
+                driverName: driverInfo?.profile?.full_name,
+                plate: driverInfo?.vehicle?.plate,
+                vehicle: driverInfo?.vehicle
+                  ? `${driverInfo.vehicle.color} ${driverInfo.vehicle.make} ${driverInfo.vehicle.model} (${vehicleLabel(ride.vehicle_type)})`
+                  : vehicleLabel(ride.vehicle_type),
+                pickup: ride.pickup_address,
+                dropoff: ride.dropoff_address,
+              }}
+            />
+          )}
+          <Badge variant="secondary">{vehicleLabel(ride.vehicle_type)}</Badge>
+        </div>
       </div>
 
       {ride.status === "requested" ? (

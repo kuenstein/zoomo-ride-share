@@ -4,6 +4,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { ActiveRideBanner } from "@/components/ActiveRideBanner";
 import { useAuth } from "@/hooks/useAuth";
 import { useAppMode } from "@/lib/nav";
+import { useEffect } from "react";
+import { ConsentGate } from "@/components/ConsentGate";
+import { registerSW } from "@/lib/push-client";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -23,11 +26,15 @@ function AuthedLayout() {
   const mode = useAppMode(pathname, isDriver);
   const isAdmin = pathname.startsWith("/admin");
   const showBanner = mode === "rider" && !isAdmin && pathname !== "/ride";
+  useEffect(() => {
+    void registerSW().catch(() => undefined);
+  }, []);
 
   return (
     <div className={`min-h-screen bg-background ${isAdmin ? "" : "pb-[68px]"}`}>
       {showBanner && <ActiveRideBanner />}
       <Outlet />
+      <ConsentGate />
       {!isAdmin && <BottomNav />}
     </div>
   );
