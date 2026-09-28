@@ -394,20 +394,20 @@ function AreaManager() {
       center_lng: Number(form.lng),
       radius_km: Number(form.radius),
     });
-    if (error) return toast.error("Could not add area");
+    if (error) { toast.error("Could not add area"); return; }
     toast.success("Service area added");
     setForm({ name: "", lat: "", lng: "", radius: "5" });
     refresh();
   };
   const update = async (a: Area, patch: Partial<Area>) => {
     const { error } = await supabase.from("service_areas").update(patch).eq("id", a.id);
-    if (error) return toast.error("Could not update area");
+    if (error) { toast.error("Could not update area"); return; }
     toast.success("Area updated");
     refresh();
   };
   const remove = async (a: Area) => {
     const { error } = await supabase.from("service_areas").delete().eq("id", a.id);
-    if (error) return toast.error("Could not delete area");
+    if (error) { toast.error("Could not delete area"); return; }
     toast.success("Area removed");
     refresh();
   };
