@@ -142,59 +142,83 @@ export type Database = {
       }
       pricing_settings: {
         Row: {
+          airport_fare_bike: number
+          airport_fare_tricycle: number
           airport_flat_fare: number
           airport_lat: number
           airport_lng: number
           airport_radius_km: number
           base_fare: number
+          base_fare_bike: number
+          base_fare_tricycle: number
           commission_percent: number
           currency: string
           id: number
           minimum_fare: number
+          minimum_fare_bike: number
+          minimum_fare_tricycle: number
           multiplier_bike: number
           multiplier_comfort: number
           multiplier_economy: number
           multiplier_tricycle: number
           multiplier_xl: number
           per_km: number
+          per_km_bike: number
+          per_km_tricycle: number
           per_minute: number
           updated_at: string
         }
         Insert: {
+          airport_fare_bike?: number
+          airport_fare_tricycle?: number
           airport_flat_fare?: number
           airport_lat?: number
           airport_lng?: number
           airport_radius_km?: number
           base_fare?: number
+          base_fare_bike?: number
+          base_fare_tricycle?: number
           commission_percent?: number
           currency?: string
           id?: number
           minimum_fare?: number
+          minimum_fare_bike?: number
+          minimum_fare_tricycle?: number
           multiplier_bike?: number
           multiplier_comfort?: number
           multiplier_economy?: number
           multiplier_tricycle?: number
           multiplier_xl?: number
           per_km?: number
+          per_km_bike?: number
+          per_km_tricycle?: number
           per_minute?: number
           updated_at?: string
         }
         Update: {
+          airport_fare_bike?: number
+          airport_fare_tricycle?: number
           airport_flat_fare?: number
           airport_lat?: number
           airport_lng?: number
           airport_radius_km?: number
           base_fare?: number
+          base_fare_bike?: number
+          base_fare_tricycle?: number
           commission_percent?: number
           currency?: string
           id?: number
           minimum_fare?: number
+          minimum_fare_bike?: number
+          minimum_fare_tricycle?: number
           multiplier_bike?: number
           multiplier_comfort?: number
           multiplier_economy?: number
           multiplier_tricycle?: number
           multiplier_xl?: number
           per_km?: number
+          per_km_bike?: number
+          per_km_tricycle?: number
           per_minute?: number
           updated_at?: string
         }
