@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Map } from "@/components/Map";
 import { formatMoney, formatDateTime } from "@/lib/geo";
-import { STATUS_LABEL, vehicleLabel, isSupportedType } from "@/lib/pricing";
+import { STATUS_LABEL, vehicleLabel, isSupportedType, fareBreakdown } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/activity/$rideId")({
   head: () => ({
@@ -33,6 +33,10 @@ function TripDetail() {
   const { rideId } = Route.useParams();
   const router = useRouter();
   const canGoBack = useCanGoBack();
+  const { data: pricing } = useQuery({
+    queryKey: ["pricing"],
+    queryFn: async () => (await supabase.from("pricing_settings").select("*").eq("id", 1).maybeSingle()).data,
+  });
   const { data: ride, isLoading } = useQuery({
     queryKey: ["ride", rideId],
     queryFn: async () => {
@@ -114,7 +118,16 @@ function TripDetail() {
         <p className="mb-2 font-semibold">Receipt</p>
         <Row label="Ride type" value={vehicleLabel(ride.vehicle_type)} />
         <Row label="Distance" value={`${ride.distance_km} km`} />
-        <Row label="Duration" value={`${ride.duration_min} min`} />
+        {pricing && Number(ride.fare_estimate) !== Math.round(Number(pricing.airport_flat_fare) * fareBreakdown(pricing, ride.vehicle_type, 0).multiplier) && (() => {
+          const b = fareBreakdown(pricing, ride.vehicle_type, Number(ride.distance_km));
+          return (
+            <>
+              <Row label="Base fare" value={formatMoney(b.base)} />
+              <Row label={`Distance (${b.km} km × ${formatMoney(b.rate)})`} value={formatMoney(b.distance)} />
+              {b.multiplier !== 1 && <Row label={`${vehicleLabel(ride.vehicle_type)} rate`} value={`× ${b.multiplier}`} />}
+            </>
+          );
+        })()}
         <Row label="Fare estimate" value={formatMoney(ride.fare_estimate)} />
         {Number(ride.discount) > 0 && (
           <Row label={`Promo ${ride.promo_code ?? ""}`} value={`- ${formatMoney(ride.discount)}`} />
