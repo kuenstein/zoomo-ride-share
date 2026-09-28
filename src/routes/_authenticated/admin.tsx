@@ -1,3 +1,4 @@
+import type { Database } from "@/integrations/supabase/types";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -358,7 +359,7 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
       return;
     }
     setBusy(true);
-    const patch = Object.fromEntries(ALL_KEYS.map((k) => [k, num(k)]));
+    const patch = Object.fromEntries(ALL_KEYS.map((k) => [k, num(k)])) as Database["public"]["Tables"]["pricing_settings"]["Update"];
     const { error } = await supabase.from("pricing_settings").update(patch).eq("id", 1);
     setBusy(false);
     if (error) {
