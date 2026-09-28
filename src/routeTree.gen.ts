@@ -14,9 +14,11 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
+import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
 import { Route as AuthenticatedRideRouteImport } from './routes/_authenticated/ride'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as AuthenticatedActivityRideIdRouteImport } from './routes/_authenticated/activity.$rideId'
+import { Route as AuthenticatedDriverEarningsRouteImport } from './routes/_authenticated/driver.earnings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -42,6 +44,11 @@ const AuthenticatedActivityRoute = AuthenticatedActivityRouteImport.update({
   path: '/activity',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
+  id: '/driver',
+  path: '/driver',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRideRoute = AuthenticatedRideRouteImport.update({
   id: '/ride',
   path: '/ride',
@@ -58,24 +65,34 @@ const AuthenticatedActivityRideIdRoute =
     path: '/$rideId',
     getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
+const AuthenticatedDriverEarningsRoute =
+  AuthenticatedDriverEarningsRouteImport.update({
+    id: '/earnings',
+    path: '/earnings',
+    getParentRoute: () => AuthenticatedDriverRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/driver': typeof AuthenticatedDriverRouteWithChildren
   '/ride': typeof AuthenticatedRideRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
+  '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/driver': typeof AuthenticatedDriverRouteWithChildren
   '/ride': typeof AuthenticatedRideRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
+  '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -84,9 +101,11 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
+  '/_authenticated/driver': typeof AuthenticatedDriverRouteWithChildren
   '/_authenticated/ride': typeof AuthenticatedRideRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/_authenticated/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
+  '/_authenticated/driver/earnings': typeof AuthenticatedDriverEarningsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,18 +114,22 @@ export interface FileRouteTypes {
     | '/auth'
     | '/account'
     | '/activity'
+    | '/driver'
     | '/ride'
     | '/wallet'
     | '/activity/$rideId'
+    | '/driver/earnings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/account'
     | '/activity'
+    | '/driver'
     | '/ride'
     | '/wallet'
     | '/activity/$rideId'
+    | '/driver/earnings'
   id:
     | '__root__'
     | '/'
@@ -114,9 +137,11 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/account'
     | '/_authenticated/activity'
+    | '/_authenticated/driver'
     | '/_authenticated/ride'
     | '/_authenticated/wallet'
     | '/_authenticated/activity/$rideId'
+    | '/_authenticated/driver/earnings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -162,6 +187,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/driver': {
+      id: '/_authenticated/driver'
+      path: '/driver'
+      fullPath: '/driver'
+      preLoaderRoute: typeof AuthenticatedDriverRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ride': {
       id: '/_authenticated/ride'
       path: '/ride'
@@ -183,6 +215,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRideIdRouteImport
       parentRoute: typeof AuthenticatedActivityRoute
     }
+    '/_authenticated/driver/earnings': {
+      id: '/_authenticated/driver/earnings'
+      path: '/earnings'
+      fullPath: '/driver/earnings'
+      preLoaderRoute: typeof AuthenticatedDriverEarningsRouteImport
+      parentRoute: typeof AuthenticatedDriverRoute
+    }
   }
 }
 
@@ -199,9 +238,21 @@ const AuthenticatedActivityRouteWithChildren =
     AuthenticatedActivityRouteChildren,
   )
 
+interface AuthenticatedDriverRouteChildren {
+  AuthenticatedDriverEarningsRoute: typeof AuthenticatedDriverEarningsRoute
+}
+
+const AuthenticatedDriverRouteChildren: AuthenticatedDriverRouteChildren = {
+  AuthenticatedDriverEarningsRoute: AuthenticatedDriverEarningsRoute,
+}
+
+const AuthenticatedDriverRouteWithChildren =
+  AuthenticatedDriverRoute._addFileChildren(AuthenticatedDriverRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
+  AuthenticatedDriverRoute: typeof AuthenticatedDriverRouteWithChildren
   AuthenticatedRideRoute: typeof AuthenticatedRideRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
@@ -209,6 +260,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
+  AuthenticatedDriverRoute: AuthenticatedDriverRouteWithChildren,
   AuthenticatedRideRoute: AuthenticatedRideRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }
