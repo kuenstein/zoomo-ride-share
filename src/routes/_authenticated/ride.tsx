@@ -35,7 +35,9 @@ import {
   type Place,
   type RouteResult,
 } from "@/lib/geo";
-import { VEHICLE_OPTIONS, estimateFare, etaFor, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { VEHICLE_OPTIONS, VEHICLE_LABEL, estimateFare, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
+import { haversineKm } from "@/lib/geo";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -159,6 +161,23 @@ function RidePage() {
       return data;
     },
   });
+
+  const { data: areas } = useQuery({
+    queryKey: ["service-areas"],
+    queryFn: async () => {
+      const { data } = await supabase.from("service_areas").select("*").eq("active", true).order("name");
+      return (data ?? []) as ServiceArea[];
+    },
+  });
+  const inArea = useCallback(
+    (p: LatLng | null) =>
+      !p || !areas || areas.length === 0 ||
+      areas.some((a) => haversineKm(p, { lat: a.center_lat, lng: a.center_lng }) <= Number(a.radius_km)),
+    [areas],
+  );
+  const areaNames = (areas ?? []).map((a) => a.name).join(", ");
+  const outsideArea = !inArea(pickup) || !inArea(dropoff);
+  const airport = pricing ? isAirportTrip(pricing, pickup, dropoff) : false;
 
   const { data: savedPlaces } = useQuery({
     queryKey: ["saved-places", user?.id],
@@ -309,8 +328,8 @@ function RidePage() {
 
   const baseFare = useMemo(() => {
     if (!pricing || !route) return null;
-    return estimateFare(pricing, vehicle, route.distanceKm, route.durationMin);
-  }, [pricing, route, vehicle]);
+    return estimateFare(pricing, vehicle, route.distanceKm, route.durationMin, airport);
+  }, [pricing, route, vehicle, airport]);
 
   const applyPromo = async () => {
     if (!promo.trim() || !baseFare) return;
@@ -330,6 +349,10 @@ function RidePage() {
 
   const requestRide = async () => {
     if (!user || !pickup || !dropoff || !route) return;
+    if (outsideArea) {
+      toast.error("Zoomo isn't available there yet", { description: `We currently serve ${areaNames}.` });
+      return;
+    }
     setRequesting(true);
     const { data, error } = await supabase
       .from("rides")
@@ -351,7 +374,7 @@ function RidePage() {
       .single();
     setRequesting(false);
     if (error) {
-      toast.error("Could not request your ride");
+      toast.error(error.message.includes("not yet available") ? "Zoomo isn't available there yet" : "Could not request your ride");
       return;
     }
     setActiveRide(data);
@@ -456,7 +479,33 @@ function RidePage() {
                   </Button>
                 ))}
               </div>
+              <div className="-mx-4 overflow-x-auto px-4">
+                <div className="flex w-max gap-2 pb-1">
+                  {POPULAR_PLACES.map((pl) => (
+                    <button
+                      key={pl.name}
+                      onClick={() => setDropoff(pl)}
+                      className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary"
+                    >
+                      <MapPin className="h-3 w-3 text-accent" /> {pl.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            {outsideArea && (
+              <div className="rounded-2xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+                <p className="font-semibold">Pasensya! Zoomo isn't available there yet.</p>
+                <p className="text-xs text-muted-foreground">
+                  We currently serve {areaNames || "Dumaguete City, Bacong, Sibulan and Valencia"}. Pick a pickup and
+                  destination inside these areas.
+                </p>
+              </div>
+            )}
+            {airport && route && (
+              <p className="rounded-xl bg-accent/10 p-2 text-xs">✈️ Airport trip — flat rate applies.</p>
+            )}
 
             {pickup && dropoff && !route && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -464,11 +513,11 @@ function RidePage() {
               </div>
             )}
 
-            {route && pricing && (
+            {route && pricing && !outsideArea && (
               <>
                 <div className="space-y-2">
                   {VEHICLE_OPTIONS.map((opt) => {
-                    const fare = estimateFare(pricing, opt.type, route.distanceKm, route.durationMin);
+                    const fare = estimateFare(pricing, opt.type, route.distanceKm, route.durationMin, airport);
                     const selected = vehicle === opt.type;
                     return (
                       <button
@@ -588,8 +637,8 @@ function TrackingPanel({
             {ride.payment_method}
           </p>
         </div>
-        <Badge variant="secondary" className="capitalize">
-          {ride.vehicle_type}
+        <Badge variant="secondary">
+          {VEHICLE_LABEL[ride.vehicle_type] ?? ride.vehicle_type}
         </Badge>
       </div>
 
