@@ -19,20 +19,16 @@ export type RouteResult = {
   fallback: boolean;
 };
 
+// All provider traffic goes through the server (caching, rate limits, provider swap by env vars).
 export async function getRoute(from: LatLng, to: LatLng): Promise<RouteResult> {
   try {
-    const url = `https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("route failed");
-    const json = (await res.json()) as {
-      routes?: { distance: number; duration: number; geometry: { coordinates: [number, number][] } }[];
-    };
-    const r = json.routes?.[0];
-    if (!r) throw new Error("no route");
+    const { geoRoute } = await import("./geo.functions");
+    const { route } = await geoRoute({ data: { from, to } });
+    if (!route) throw new Error("no route");
     return {
-      distanceKm: Math.round((r.distance / 1000) * 100) / 100,
-      durationMin: Math.round((r.duration / 60) * 10) / 10,
-      coords: r.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]),
+      distanceKm: Math.round(route.distanceKm * 100) / 100,
+      durationMin: Math.round(route.durationMin * 10) / 10,
+      coords: route.coords,
       fallback: false,
     };
   } catch {
@@ -51,28 +47,33 @@ export async function getRoute(from: LatLng, to: LatLng): Promise<RouteResult> {
 
 export async function searchAddress(query: string): Promise<Place[]> {
   if (query.trim().length < 3) return [];
-  // Philippines only, biased toward Negros Oriental (Dumaguete, Bacong, Sibulan, Valencia)
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=ph&viewbox=123.15,9.45,123.40,9.18&bounded=0&q=${encodeURIComponent(query)}`;
-  const res = await fetch(url, { headers: { Accept: "application/json" } });
-  if (!res.ok) return [];
-  const json = (await res.json()) as { lat: string; lon: string; display_name: string }[];
-  return json.map((r) => ({
-    lat: parseFloat(r.lat),
-    lng: parseFloat(r.lon),
-    address: r.display_name,
-  }));
+  try {
+    const { geoSearch } = await import("./geo.functions");
+    const r = await geoSearch({ data: { q: query.trim() } });
+    return r.places;
+  } catch {
+    return [];
+  }
 }
 
 export async function reverseGeocode(p: LatLng): Promise<string> {
+  const fallback = `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.lat}&lon=${p.lng}`;
-    const res = await fetch(url, { headers: { Accept: "application/json" } });
-    if (!res.ok) throw new Error("reverse failed");
-    const json = (await res.json()) as { display_name?: string };
-    return json.display_name ?? `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+    const { geoReverse } = await import("./geo.functions");
+    const r = await geoReverse({ data: p });
+    return r.address ?? fallback;
   } catch {
-    return `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`;
+    return fallback;
   }
+}
+
+/** Debounce helper for address search inputs (default 350 ms). */
+export function debounce<A extends unknown[]>(fn: (...a: A) => void, ms = 350) {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return (...a: A) => {
+    if (t) clearTimeout(t);
+    t = setTimeout(() => fn(...a), ms);
+  };
 }
 
 export function getCurrentPosition(): Promise<LatLng> {
