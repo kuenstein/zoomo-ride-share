@@ -200,7 +200,10 @@ function DriverHome() {
   const fixVehicle = async (t: VehicleType) => {
     if (!vehicle) return;
     const { error } = await supabase.from("vehicles").update({ type: t }).eq("id", vehicle.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     setVehicle({ ...vehicle, type: t });
     toast.success("Vehicle type updated — you can go online now");
   };
