@@ -1,3 +1,4 @@
+import type { Database } from "@/integrations/supabase/types";
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { formatMoney, formatDateTime } from "@/lib/geo";
-import { STATUS_LABEL, vehicleLabel, isSupportedType } from "@/lib/pricing";
+import { STATUS_LABEL, vehicleLabel, isSupportedType, fareFromRates } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -318,41 +319,47 @@ function PromoManager({ promos, onChange }: { promos: Promo[]; onChange: () => v
   );
 }
 
-type Pricing = {
-  base_fare: number;
-  per_km: number;
-  per_minute: number;
-  minimum_fare: number;
-  commission_percent: number;
-  multiplier_economy: number;
-  multiplier_comfort: number;
-  multiplier_xl: number;
-  multiplier_bike: number;
-  multiplier_tricycle: number;
-  airport_flat_fare: number;
-  airport_radius_km: number;
-};
+type Pricing = Record<string, unknown>;
 
-const FIELDS: { key: keyof Pricing; label: string }[] = [
-  { key: "base_fare", label: "Base fare" },
-  { key: "per_km", label: "Per km" },
-  { key: "minimum_fare", label: "Minimum fare" },
+const TYPE_SECTIONS = [
+  { t: "tricycle", title: "Tricycle" },
+  { t: "bike", title: "Motorcycle (habal-habal)" },
+] as const;
+const TYPE_FIELDS = [
+  { k: "base_fare", label: "Base fare (₱)" },
+  { k: "per_km", label: "Per km (₱)" },
+  { k: "minimum_fare", label: "Minimum fare (₱)" },
+  { k: "airport_fare", label: "Airport flat fare (₱)" },
+] as const;
+const GENERAL_FIELDS = [
   { key: "commission_percent", label: "Commission %" },
-  { key: "multiplier_tricycle", label: "Tricycle ×" },
-  { key: "multiplier_bike", label: "Motorcycle (habal-habal) ×" },
-  { key: "airport_flat_fare", label: "Airport flat fare (₱)" },
   { key: "airport_radius_km", label: "Airport zone radius (km)" },
+] as const;
+const ALL_KEYS = [
+  ...TYPE_SECTIONS.flatMap((s) => TYPE_FIELDS.map((f) => `${f.k}_${s.t}`)),
+  ...GENERAL_FIELDS.map((f) => f.key),
 ];
 
 function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => void }) {
   const [form, setForm] = useState<Record<string, string>>(
-    Object.fromEntries(FIELDS.map((f) => [f.key, String(pricing[f.key])])),
+    Object.fromEntries(ALL_KEYS.map((k) => [k, String(pricing[k] ?? "")])),
   );
   const [busy, setBusy] = useState(false);
+  const num = (k: string) => Number(form[k]);
 
   const save = async () => {
+    for (const k of ALL_KEYS) {
+      if (form[k] === "" || !Number.isFinite(num(k)) || num(k) < 0) {
+        toast.error("Please enter valid, non-negative numbers in every field");
+        return;
+      }
+    }
+    if (num("commission_percent") > 100) {
+      toast.error("Commission must be between 0 and 100");
+      return;
+    }
     setBusy(true);
-    const patch = Object.fromEntries(FIELDS.map((f) => [f.key, Number(form[f.key])])) as Partial<Pricing>;
+    const patch = Object.fromEntries(ALL_KEYS.map((k) => [k, num(k)])) as Database["public"]["Tables"]["pricing_settings"]["Update"];
     const { error } = await supabase.from("pricing_settings").update(patch).eq("id", 1);
     setBusy(false);
     if (error) {
@@ -363,21 +370,38 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
     onSaved();
   };
 
+  const field = (key: string, label: string) => (
+    <div key={key} className="space-y-1">
+      <Label htmlFor={key}>{label}</Label>
+      <Input
+        id={key}
+        type="number"
+        min={0}
+        step="0.01"
+        value={form[key]}
+        onChange={(e) => setForm((s) => ({ ...s, [key]: e.target.value }))}
+      />
+    </div>
+  );
+
   return (
-    <div className="space-y-3 rounded-2xl border border-border p-4">
-      <div className="grid grid-cols-2 gap-3">
-        {FIELDS.map((f) => (
-          <div key={f.key} className="space-y-1">
-            <Label htmlFor={f.key}>{f.label}</Label>
-            <Input
-              id={f.key}
-              type="number"
-              step="0.01"
-              value={form[f.key]}
-              onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
-            />
+    <div className="space-y-4 rounded-2xl border border-border p-4">
+      {TYPE_SECTIONS.map((s) => {
+        const preview = fareFromRates(
+          { base: num(`base_fare_${s.t}`) || 0, perKm: num(`per_km_${s.t}`) || 0, minimum: num(`minimum_fare_${s.t}`) || 0 },
+          5,
+        );
+        return (
+          <div key={s.t} className="space-y-2">
+            <p className="font-semibold">{s.title}</p>
+            <div className="grid grid-cols-2 gap-3">{TYPE_FIELDS.map((f) => field(`${f.k}_${s.t}`, f.label))}</div>
+            <p className="text-xs text-muted-foreground">Preview: 5 km trip = {formatMoney(preview, { whole: true })}</p>
           </div>
-        ))}
+        );
+      })}
+      <div className="space-y-2">
+        <p className="font-semibold">General</p>
+        <div className="grid grid-cols-2 gap-3">{GENERAL_FIELDS.map((f) => field(f.key, f.label))}</div>
       </div>
       <Button className="w-full" onClick={save} disabled={busy}>
         Save pricing

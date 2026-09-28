@@ -35,13 +35,20 @@ export function vehicleLabel(t: string | null | undefined): string {
   return (t && VEHICLE_LABEL[t]) || "Ride (retired type)";
 }
 
-export function multiplierFor(p: Pricing, type: VehicleType): number {
-  switch (type) {
-    case "tricycle":
-      return Number(p.multiplier_tricycle);
-    default:
-      return Number(p.multiplier_bike);
-  }
+/** Per-type rates. Retired types fall back to motorcycle rates for display only. */
+export function ratesFor(p: Pricing, type: string) {
+  const t = type === "tricycle" ? "tricycle" : "bike";
+  return {
+    base: Number(p[`base_fare_${t}`]),
+    perKm: Number(p[`per_km_${t}`]),
+    minimum: Number(p[`minimum_fare_${t}`]),
+    airport: Number(p[`airport_fare_${t}`]),
+  };
+}
+
+/** Same formula as the server: max(round(base + perKm × km), minimum). */
+export function fareFromRates(r: { base: number; perKm: number; minimum: number }, km: number): number {
+  return Math.max(Math.round(r.base + r.perKm * km), r.minimum);
 }
 
 export function isAirportTrip(p: Pricing, a: LatLng | null, b: LatLng | null): boolean {
@@ -50,18 +57,17 @@ export function isAirportTrip(p: Pricing, a: LatLng | null, b: LatLng | null): b
   return !!((a && haversineKm(a, ap) <= r) || (b && haversineKm(b, ap) <= r));
 }
 
-/** Mirrors the server fare: airport flat rate, else (base + per_km × km) × multiplier, rounded to the nearest peso. Time never affects price. */
+/** Mirrors the server fare: per-type airport flat fare, else base + per_km × km, rounded, never below minimum. */
 export function estimateFare(p: Pricing, type: VehicleType, km: number, airport = false): number {
-  const m = multiplierFor(p, type);
-  if (airport) return Math.round(Number(p.airport_flat_fare) * m);
-  const fare = (Number(p.base_fare) + Number(p.per_km) * km) * m;
-  return Math.round(Math.max(fare, Number(p.minimum_fare) * m));
+  const r = ratesFor(p, type);
+  if (airport) return Math.round(r.airport);
+  return fareFromRates(r, km);
 }
 
-/** Distance-only breakdown for receipts, using current pricing settings. */
+/** Receipt breakdown using current pricing settings. */
 export function fareBreakdown(p: Pricing, type: string, km: number) {
-  const rate = Number(p.per_km);
-  return { base: Number(p.base_fare), km, rate, distance: rate * km, multiplier: multiplierFor(p, type as VehicleType) };
+  const r = ratesFor(p, type);
+  return { base: r.base, km, rate: r.perKm, distance: r.perKm * km, airport: r.airport };
 }
 
 export function etaFor(type: VehicleType, min: number): number {

@@ -118,13 +118,12 @@ function TripDetail() {
         <p className="mb-2 font-semibold">Receipt</p>
         <Row label="Ride type" value={vehicleLabel(ride.vehicle_type)} />
         <Row label="Distance" value={`${ride.distance_km} km`} />
-        {pricing && Number(ride.fare_estimate) !== Math.round(Number(pricing.airport_flat_fare) * fareBreakdown(pricing, ride.vehicle_type, 0).multiplier) && (() => {
+        {pricing && Number(ride.fare_estimate) !== Math.round(fareBreakdown(pricing, ride.vehicle_type, 0).airport) && (() => {
           const b = fareBreakdown(pricing, ride.vehicle_type, Number(ride.distance_km));
           return (
             <>
               <Row label="Base fare" value={formatMoney(b.base)} />
               <Row label={`Distance (${b.km} km × ${formatMoney(b.rate)})`} value={formatMoney(b.distance)} />
-              {b.multiplier !== 1 && <Row label={`${vehicleLabel(ride.vehicle_type)} rate`} value={`× ${b.multiplier}`} />}
             </>
           );
         })()}
