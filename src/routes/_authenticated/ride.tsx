@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState , useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -179,6 +179,7 @@ function RidePage() {
   const [promo, setPromo] = useState(search.promo ?? "");
   const [promoInfo, setPromoInfo] = useState<{ valid: boolean; discount: number; message: string } | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const retryRef = useRef<(() => void) | null>(null);
   const [passengers, setPassengers] = useState(1);
   const [baggage, setBaggage] = useState(false);
   const [offer, setOffer] = useState("");
@@ -281,7 +282,10 @@ function RidePage() {
               setRateOpen(true);
             }
             if (row.status === "expired") {
-              toast.error("No drivers responded. Try again.");
+              toast.error("No drivers responded in time.", {
+                duration: 15000,
+                action: { label: "Try again", onClick: () => retryRef.current?.() },
+              });
             }
           }
         },
@@ -427,14 +431,14 @@ function RidePage() {
     toast.success("Looking for a nearby driver…");
   };
 
+  retryRef.current = () => void requestRide();
+
   const cancelRide = async () => {
     if (!activeRide) return;
-    const { error } = await supabase
-      .from("rides")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancel_reason: "Cancelled by rider" })
-      .eq("id", activeRide.id);
-    if (error) {
-      toast.error("Could not cancel");
+    const { data, error } = await supabase.rpc("rider_cancel_ride", { _ride_id: activeRide.id });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (error || !res?.success) {
+      toast.error(res?.message ?? "Could not cancel");
       return;
     }
     setActiveRide(null);

@@ -17,3 +17,6 @@
 - AI Gateway calls live in `src/lib/ai-gateway.server.ts` (streamed Responses, `system` option for instructions) — keeps the key server-side.
 - Navigation mode (rider/driver bottom nav) is derived from the page path, falling back to the last mode saved in `src/lib/nav.ts`; role-based home screens come from `homeForRoles()` there — one source of truth for post-login and 404 redirects.
 - Privacy RLS regression tests live in `supabase/tests/rls_privacy_policies.sql` (self-contained, rolls back) — rerun after any policy change on profiles/drivers/vehicles/driver_locations/pricing.
+- Ride status changes by riders/drivers go through `rider_cancel_ride` / `driver_set_ride_status` / `accept_ride` / `complete_ride`; the `protect_ride_update` trigger blocks any other direct change — keeps trips and money tamper-proof.
+- Cash trips debit Zoomo's commission from the driver wallet (may go negative, capped by `pricing_settings.max_driver_debt`); payouts reserve funds via `request_payout` — wallet stays the single ledger.
+- Ride/money regression tests live in `supabase/tests/ride_money_protections.sql` (rolls back) — rerun after changing ride, wallet or signup functions.

@@ -241,8 +241,12 @@ function DriverHome() {
       toast.error("Update your vehicle type to Tricycle or Motorcycle first");
       return;
     }
+    const { error: onlineErr } = await supabase.from("drivers").update({ is_online: next }).eq("user_id", user.id);
+    if (onlineErr) {
+      toast.error(onlineErr.message.includes("owe Zoomo") ? "Please settle what you owe Zoomo to go online" : "Could not change your status");
+      return;
+    }
     setOnline(next);
-    await supabase.from("drivers").update({ is_online: next }).eq("user_id", user.id);
     await supabase
       .from("driver_locations")
       .upsert({
@@ -281,6 +285,7 @@ function DriverHome() {
         .from("rides")
         .select("*")
         .eq("status", "requested")
+        .gte("requested_at", new Date(Date.now() - 2 * 60 * 1000).toISOString())
         .order("created_at", { ascending: false })
         .limit(5);
       const candidate = (data ?? []).find(
@@ -348,12 +353,11 @@ function DriverHome() {
   const setStatus = async (status: "arriving" | "in_progress") => {
     if (!activeRide) return;
     setBusy(true);
-    const patch: { status: "arriving" | "in_progress"; started_at?: string } = { status };
-    if (status === "in_progress") patch.started_at = new Date().toISOString();
-    const { error } = await supabase.from("rides").update(patch).eq("id", activeRide.id);
+    const { data, error } = await supabase.rpc("driver_set_ride_status", { _ride_id: activeRide.id, _status: status });
     setBusy(false);
-    if (error) {
-      toast.error("Could not update the trip");
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (error || !res?.success) {
+      toast.error(res?.message ?? "Could not update the trip");
       return;
     }
     toast.success(status === "arriving" ? "Marked as arrived" : "Trip started");
@@ -365,25 +369,46 @@ function DriverHome() {
     setBusy(true);
     const { data, error } = await supabase.rpc("complete_ride", { _ride_id: activeRide.id, _tip: 0 });
     setBusy(false);
-    const res = data as unknown as { success: boolean; message?: string; earnings?: number } | null;
+    const res = data as unknown as { success: boolean; message?: string; earnings?: number; cash?: boolean; fare?: number } | null;
     if (error || !res?.success) {
       toast.error(res?.message ?? "Could not complete the trip");
       return;
     }
-    toast.success(`Trip complete — you earned ${formatMoney(res.earnings)}`);
+    toast.success(
+      res.cash
+        ? `Trip complete — collect ${formatMoney(res.fare)} in cash. You earned ${formatMoney(res.earnings)}`
+        : `Trip complete — you earned ${formatMoney(res.earnings)}`,
+    );
     setRateRide(activeRide);
     setActiveRide(null);
+    void refetchWallet();
   };
 
   const cancelTrip = async () => {
     if (!activeRide) return;
-    await supabase
-      .from("rides")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancel_reason: "Cancelled by driver" })
-      .eq("id", activeRide.id);
+    const { data, error } = await supabase.rpc("driver_set_ride_status", { _ride_id: activeRide.id, _status: "cancelled" });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (error || !res?.success) {
+      toast.error(res?.message ?? "Could not cancel this trip");
+      return;
+    }
     setActiveRide(null);
     toast.success("Trip cancelled");
   };
+
+  const { data: walletInfo, refetch: refetchWallet } = useQuery({
+    queryKey: ["driver-wallet", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const [w, p] = await Promise.all([
+        supabase.from("wallets").select("balance").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("pricing_settings").select("max_driver_debt").eq("id", 1).maybeSingle(),
+      ]);
+      const balance = Number(w.data?.balance ?? 0);
+      const limit = Number(p.data?.max_driver_debt ?? 500);
+      return { balance, limit, blocked: balance < -limit };
+    },
+  });
 
   const { data: todayEarnings } = useQuery({
     queryKey: ["driver-today", user?.id, activeRide?.id],
@@ -513,6 +538,19 @@ function DriverHome() {
                 </Link>
               </Button>
             </div>
+            {walletInfo && (
+              <Link to="/driver/earnings" className="block rounded-2xl border border-border p-3">
+                <p className="text-xs text-muted-foreground">{walletInfo.balance < 0 ? "Owed to Zoomo" : "Wallet balance"}</p>
+                <p className={`text-lg font-bold ${walletInfo.balance < 0 ? "text-destructive" : ""}`}>
+                  {formatMoney(Math.abs(walletInfo.balance))}
+                </p>
+                {walletInfo.blocked && (
+                  <p className="mt-1 text-xs text-destructive">
+                    You owe more than {formatMoney(walletInfo.limit)} in cash-trip commission. Please settle with Zoomo to go online and accept rides again.
+                  </p>
+                )}
+              </Link>
+            )}
             <Button asChild variant="ghost" className="w-full">
               <Link to="/driver/trips">View trip history</Link>
             </Button>
