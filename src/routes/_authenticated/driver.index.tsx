@@ -427,6 +427,19 @@ function DriverHome() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {!vehicleOk && (
+          <div className="mb-3 space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold">Your vehicle type is no longer supported</p>
+            <p className="text-muted-foreground">Zoomo now offers only Tricycle and Motorcycle rides. Update your vehicle type to go online.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {DRIVER_VEHICLES.map((v) => (
+                <Button key={v.type} size="sm" variant="outline" onClick={() => void fixVehicle(v.type)}>
+                  {v.emoji} {v.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeRide ? (
           <div className="space-y-3">
