@@ -30,8 +30,7 @@ Ride types: tricycle (up to 4, cheap, short town trips, some luggage), bike (mot
 Known places: ${places}. Rider's saved places: ${data.savedPlaces.join("; ") || "none"}.
 Reply ONLY with a JSON object: {"vehicle": one of tricycle|economy|comfort|xl|bike, "reason": short friendly sentence, "destination_name": exact name from known or saved places or null, "destination_query": address search text if destination is mentioned but not in the lists else null, "payment": cash|wallet|card or null if not mentioned, "notes": short note for the driver or null}.`;
     try {
-      const text = await generateTextViaGateway([
-        { role: "system", content: system },
+      const text = await generateTextViaGateway(system, [
         { role: "user", content: data.description },
       ]);
       const json = text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);

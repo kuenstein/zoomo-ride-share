@@ -21,7 +21,7 @@ export class GatewayError extends Error {
 }
 
 /** Streams a Responses call through the Lovable AI Gateway and returns the final text. */
-export async function generateTextViaGateway(messages: ModelMessage[]): Promise<string> {
+export async function generateTextViaGateway(system: string, messages: ModelMessage[]): Promise<string> {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new GatewayError(401, "AI is not configured.");
   const provider = createOpenAI({
@@ -33,6 +33,7 @@ export async function generateTextViaGateway(messages: ModelMessage[]): Promise<
   let failure: unknown;
   const result = streamText({
     model: provider.responses("openai/gpt-6-astra"),
+    system,
     messages,
     onError: ({ error }) => {
       failure = error;
@@ -50,7 +51,7 @@ export async function generateTextViaGateway(messages: ModelMessage[]): Promise<
   let text = "";
   for await (const chunk of result.textStream) text += chunk;
   if (failure || !text) {
-    console.error("gateway failure", failure);
+    if (failure) console.error("gateway failure", failure);
     const status = (failure as { statusCode?: number } | undefined)?.statusCode ?? 500;
     if (status === 429) throw new GatewayError(429, "The assistant is busy. Please try again in a moment.");
     if (status === 402) throw new GatewayError(402, "The assistant is unavailable right now (AI credits exhausted).");
