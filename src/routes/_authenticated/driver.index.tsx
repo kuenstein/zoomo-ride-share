@@ -261,8 +261,12 @@ function DriverHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, online]);
 
+  useWakeLock(online);
+  useTitleFlash(!!incoming);
+
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
+    if (next) unlockAudio();
     if (next && !vehicleOk) {
       toast.error("Update your vehicle type to Tricycle or Motorcycle first");
       return;
@@ -326,7 +330,10 @@ function DriverHome() {
         const r = payload.new as Ride;
         if (r.status !== "requested" || declined.current.has(r.id)) return;
         if (pos && haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) > 5) return;
-        setIncoming((cur) => cur ?? r);
+        setIncoming((cur) => {
+          if (!cur) playRequestAlert();
+          return cur ?? r;
+        });
         setCountdown(20);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides" }, (payload) => {
@@ -499,9 +506,20 @@ function DriverHome() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-lg font-bold">{STATUS_LABEL[activeRide.status]}</p>
-              <Badge variant="secondary">
-                {formatMoney(Number(activeRide.fare_estimate) - Number(activeRide.discount))}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <SosButton
+                  trip={{
+                    rideId: activeRide.id,
+                    driverName: `${profile?.full_name ?? "Driver"} (me, driver)`,
+                    vehicle: vehicle?.type === "bike" ? "Motorcycle" : "Tricycle",
+                    pickup: activeRide.pickup_address,
+                    dropoff: activeRide.dropoff_address,
+                  }}
+                />
+                <Badge variant="secondary">
+                  {formatMoney(Number(activeRide.fare_estimate) - Number(activeRide.discount))}
+                </Badge>
+              </div>
             </div>
             <div className="space-y-1 rounded-2xl bg-secondary p-3 text-sm">
               <p className="flex gap-2">
