@@ -46,9 +46,9 @@ export function ratesFor(p: Pricing, type: string) {
   };
 }
 
-/** Same formula as the server: max(round(base + perKm × km), minimum). */
+/** Same formula as the server: base covers the first km, +perKm for each km after, never below minimum. */
 export function fareFromRates(r: { base: number; perKm: number; minimum: number }, km: number): number {
-  return Math.max(Math.round(r.base + r.perKm * km), r.minimum);
+  return Math.max(Math.round(r.base + r.perKm * Math.max(km - 1, 0)), r.minimum);
 }
 
 export function isAirportTrip(p: Pricing, a: LatLng | null, b: LatLng | null): boolean {
@@ -57,7 +57,7 @@ export function isAirportTrip(p: Pricing, a: LatLng | null, b: LatLng | null): b
   return !!((a && haversineKm(a, ap) <= r) || (b && haversineKm(b, ap) <= r));
 }
 
-/** Mirrors the server fare: per-type airport flat fare, else base + per_km × km, rounded, never below minimum. */
+/** Mirrors the server fare: per-type airport flat fare, else base (first km) + per_km × extra km, rounded, never below minimum. */
 export function estimateFare(p: Pricing, type: VehicleType, km: number, airport = false): number {
   const r = ratesFor(p, type);
   if (airport) return Math.round(r.airport);
@@ -67,7 +67,8 @@ export function estimateFare(p: Pricing, type: VehicleType, km: number, airport 
 /** Receipt breakdown using current pricing settings. */
 export function fareBreakdown(p: Pricing, type: string, km: number) {
   const r = ratesFor(p, type);
-  return { base: r.base, km, rate: r.perKm, distance: r.perKm * km, airport: r.airport };
+  const extraKm = Math.max(km - 1, 0);
+  return { base: r.base, km, extraKm, rate: r.perKm, distance: r.perKm * extraKm, airport: r.airport };
 }
 
 export function etaFor(type: VehicleType, min: number): number {
