@@ -26,6 +26,7 @@ import { Route as SignupRiderRouteImport } from './routes/signup.rider'
 import { Route as AuthenticatedActivityRideIdRouteImport } from './routes/_authenticated/activity.$rideId'
 import { Route as AuthenticatedDriverIndexRouteImport } from './routes/_authenticated/driver.index'
 import { Route as AuthenticatedDriverEarningsRouteImport } from './routes/_authenticated/driver.earnings'
+import { Route as AuthenticatedDriverTripsRouteImport } from './routes/_authenticated/driver.trips'
 import { Route as ApiPublicPaymongoWebhookRouteImport } from './routes/api/public/paymongo-webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -115,6 +116,12 @@ const AuthenticatedDriverEarningsRoute =
     path: '/driver/earnings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedDriverTripsRoute =
+  AuthenticatedDriverTripsRouteImport.update({
+    id: '/driver/trips',
+    path: '/driver/trips',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicPaymongoWebhookRoute =
   ApiPublicPaymongoWebhookRouteImport.update({
     id: '/api/public/paymongo-webhook',
@@ -138,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/signup/rider': typeof SignupRiderRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
   '/driver/': typeof AuthenticatedDriverIndexRoute
 }
@@ -157,6 +165,7 @@ export interface FileRoutesByTo {
   '/signup/rider': typeof SignupRiderRoute
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
   '/driver': typeof AuthenticatedDriverIndexRoute
 }
@@ -178,6 +187,7 @@ export interface FileRoutesById {
   '/signup/rider': typeof SignupRiderRoute
   '/_authenticated/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/_authenticated/driver/earnings': typeof AuthenticatedDriverEarningsRoute
+  '/_authenticated/driver/trips': typeof AuthenticatedDriverTripsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
   '/_authenticated/driver/': typeof AuthenticatedDriverIndexRoute
 }
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/signup/rider'
     | '/activity/$rideId'
     | '/driver/earnings'
+    | '/driver/trips'
     | '/api/public/paymongo-webhook'
     | '/driver/'
   fileRoutesByTo: FileRoutesByTo
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/signup/rider'
     | '/activity/$rideId'
     | '/driver/earnings'
+    | '/driver/trips'
     | '/api/public/paymongo-webhook'
     | '/driver'
   id:
@@ -238,6 +250,7 @@ export interface FileRouteTypes {
     | '/signup/rider'
     | '/_authenticated/activity/$rideId'
     | '/_authenticated/driver/earnings'
+    | '/_authenticated/driver/trips'
     | '/api/public/paymongo-webhook'
     | '/_authenticated/driver/'
   fileRoutesById: FileRoutesById
@@ -374,6 +387,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverEarningsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/driver/trips': {
+      id: '/_authenticated/driver/trips'
+      path: '/driver/trips'
+      fullPath: '/driver/trips'
+      preLoaderRoute: typeof AuthenticatedDriverTripsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/paymongo-webhook': {
       id: '/api/public/paymongo-webhook'
       path: '/api/public/paymongo-webhook'
@@ -406,6 +426,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRideRoute: typeof AuthenticatedRideRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
   AuthenticatedDriverEarningsRoute: typeof AuthenticatedDriverEarningsRoute
+  AuthenticatedDriverTripsRoute: typeof AuthenticatedDriverTripsRoute
   AuthenticatedDriverIndexRoute: typeof AuthenticatedDriverIndexRoute
 }
 
@@ -418,6 +439,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRideRoute: AuthenticatedRideRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
   AuthenticatedDriverEarningsRoute: AuthenticatedDriverEarningsRoute,
+  AuthenticatedDriverTripsRoute: AuthenticatedDriverTripsRoute,
   AuthenticatedDriverIndexRoute: AuthenticatedDriverIndexRoute,
 }
 

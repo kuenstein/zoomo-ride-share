@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/pricing";
@@ -37,6 +38,7 @@ function AdminPage() {
         <p className="mt-2 text-sm text-muted-foreground">
           This area is restricted. Ask an existing admin to grant you access.
         </p>
+        <Link to="/account" className="mt-4 inline-block text-sm font-medium text-accent">Back to app</Link>
       </div>
     );
   }
@@ -113,9 +115,28 @@ function AdminDashboard() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold">Admin</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Admin</h1>
+        <Link to="/account" className="inline-flex items-center gap-1 text-sm font-medium text-accent">
+          <ArrowLeft className="h-4 w-4" /> Back to app
+        </Link>
+      </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <Tabs defaultValue="overview" className="mt-6">
+        <div className="-mx-4 overflow-x-auto px-4">
+        <TabsList className="w-max min-w-full">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="drivers">Drivers</TabsTrigger>
+          <TabsTrigger value="rides">Rides</TabsTrigger>
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="promos">Promos</TabsTrigger>
+          <TabsTrigger value="pricing">Pricing</TabsTrigger>
+          <TabsTrigger value="areas">Areas</TabsTrigger>
+        </TabsList>
+        </div>
+
+        <TabsContent value="overview">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
           { label: "Rides today", value: stats?.["rides_today"] ?? 0 },
           { label: "Revenue today", value: formatMoney(stats?.["revenue_today"]) },
@@ -129,14 +150,12 @@ function AdminDashboard() {
         ))}
       </div>
 
-      <Tabs defaultValue="drivers" className="mt-6">
-        <TabsList className="w-full">
-          <TabsTrigger value="drivers" className="flex-1">Drivers</TabsTrigger>
-          <TabsTrigger value="rides" className="flex-1">Rides</TabsTrigger>
-          <TabsTrigger value="promos" className="flex-1">Promos</TabsTrigger>
-          <TabsTrigger value="pricing" className="flex-1">Pricing</TabsTrigger>
-          <TabsTrigger value="areas" className="flex-1">Areas</TabsTrigger>
-        </TabsList>
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-2">
+          <AdminUsers />
+        </TabsContent>
+
 
         <TabsContent value="drivers" className="space-y-2">
           {(drivers ?? []).length === 0 && <EmptyState title="No driver applications yet" />}
@@ -457,5 +476,40 @@ function AreaManager() {
         </Button>
       </div>
     </div>
+  );
+}
+
+function AdminUsers() {
+  const { data: users, isLoading } = useQuery({
+    queryKey: ["admin-users"],
+    queryFn: async () => {
+      const [{ data: profiles }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("id,full_name,phone,rating,created_at").order("created_at", { ascending: false }).limit(200),
+        supabase.from("user_roles").select("user_id,role"),
+      ]);
+      return (profiles ?? []).map((p) => ({
+        ...p,
+        roles: (roles ?? []).filter((r) => r.user_id === p.id).map((r) => r.role),
+      }));
+    },
+  });
+  if (isLoading) return <Skeleton className="h-40 rounded-2xl" />;
+  if (!users?.length) return <EmptyState title="No users yet" />;
+  return (
+    <>
+      {users.map((u) => (
+        <div key={u.id} className="flex items-center gap-3 rounded-2xl border border-border p-3">
+          <div className="flex-1 overflow-hidden">
+            <p className="truncate text-sm font-medium">{u.full_name || "Unnamed user"}</p>
+            <p className="text-xs text-muted-foreground">{u.phone ?? "No phone"} · ★ {Number(u.rating ?? 5).toFixed(2)}</p>
+          </div>
+          <div className="flex gap-1">
+            {u.roles.map((r) => (
+              <span key={r} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold capitalize">{r}</span>
+            ))}
+          </div>
+        </div>
+      ))}
+    </>
   );
 }
