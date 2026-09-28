@@ -33,6 +33,7 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 
 function TripDetail() {
   const { rideId } = Route.useParams();
+  const { user } = useAuth();
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const { data: pricing } = useQuery({
