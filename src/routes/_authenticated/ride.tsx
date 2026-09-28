@@ -38,6 +38,7 @@ import {
 import { VEHICLE_OPTIONS, VEHICLE_LABEL, estimateFare, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
 import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
 import { haversineKm } from "@/lib/geo";
+import { TripAssistant } from "@/components/TripAssistant";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -452,6 +453,26 @@ function RidePage() {
                 />
               )}
               <AddressField label="Where to?" value={dropoff?.address ?? ""} onPick={(p) => setDropoff(p)} />
+              <TripAssistant
+                savedPlaces={(savedPlaces ?? []).map((s) => s.label)}
+                onApply={async (s) => {
+                  setVehicle(s.vehicle);
+                  if (s.payment) setPayment(s.payment);
+                  const name = s.destination_name?.toLowerCase();
+                  const known =
+                    name &&
+                    (POPULAR_PLACES.find((p) => p.name.toLowerCase() === name) ??
+                      (savedPlaces ?? []).find((p) => p.label.toLowerCase() === name));
+                  if (known) {
+                    setDropoff({ lat: known.lat, lng: known.lng, address: known.address });
+                  } else if (s.destination_query || s.destination_name) {
+                    const found = await searchAddress(s.destination_query ?? s.destination_name ?? "");
+                    if (found[0]) setDropoff(found[0]);
+                    else toast.message("Couldn't find that destination — please pick it above.");
+                  }
+                  toast.success(`${VEHICLE_LABEL[s.vehicle]} selected`);
+                }}
+              />
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
