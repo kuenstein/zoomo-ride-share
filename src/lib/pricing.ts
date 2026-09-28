@@ -18,6 +18,13 @@ export const VEHICLE_OPTIONS: {
   { type: "bike", name: "Motorcycle", description: "Habal-habal — beat the traffic, solo", seats: 1, emoji: "🏍️" },
 ];
 
+export const DRIVER_VEHICLES: { type: VehicleType; name: string; emoji: string }[] = [
+  { type: "tricycle", name: "Tricycle", emoji: "🛺" },
+  { type: "bike", name: "Motorcycle", emoji: "🏍️" },
+  { type: "economy", name: "Car", emoji: "🚗" },
+  { type: "xl", name: "Van / Multicab", emoji: "🚐" },
+];
+
 export const VEHICLE_LABEL: Record<string, string> = {
   tricycle: "Tricycle",
   economy: "Economy",
