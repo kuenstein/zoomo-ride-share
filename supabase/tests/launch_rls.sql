@@ -50,8 +50,9 @@ SELECT pg_temp.expect('rider can raise SOS on active trip',
 SELECT pg_temp.expect('rider cannot raise SOS on completed trip',
   (SELECT CASE WHEN (public.raise_sos('00000000-0000-0000-0000-00000000aa02')->>'success')::boolean THEN 1 ELSE 0 END), 0);
 SELECT pg_temp.expect('rider reads own incident', (SELECT count(*) FROM public.safety_incidents), 1);
+UPDATE public.safety_incidents SET status='resolved';
 SELECT pg_temp.expect('rider cannot update incident status',
-  (WITH u AS (UPDATE public.safety_incidents SET status='resolved' RETURNING 1) SELECT count(*) FROM u), 0);
+  (SELECT count(*) FROM public.safety_incidents WHERE status='resolved'), 0);
 SELECT pg_temp.expect('rider cannot insert incident directly',
   pg_temp.fails($q$INSERT INTO public.safety_incidents (ride_id, reporter_id, reporter_role) VALUES ('00000000-0000-0000-0000-00000000aa01','00000000-0000-0000-0000-0000000000a1','rider')$q$), 1);
 INSERT INTO public.reports (ride_id, reporter_id, category, details)
