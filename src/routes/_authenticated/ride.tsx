@@ -47,13 +47,13 @@ type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 const ACTIVE_STATUSES = ["requested", "accepted", "arriving", "in_progress"] as const;
 
 type RideSearch = {
-  pLat?: number;
-  pLng?: number;
-  pAddr?: string;
-  dLat?: number;
-  dLng?: number;
-  dAddr?: string;
-  promo?: string;
+  pLat?: number | undefined;
+  pLng?: number | undefined;
+  pAddr?: string | undefined;
+  dLat?: number | undefined;
+  dLng?: number | undefined;
+  dAddr?: string | undefined;
+  promo?: string | undefined;
 };
 
 const num = (v: unknown) => (typeof v === "number" ? v : typeof v === "string" && v !== "" && !isNaN(+v) ? +v : undefined);
@@ -61,13 +61,13 @@ const str = (v: unknown) => (typeof v === "string" && v ? v.slice(0, 300) : unde
 
 export const Route = createFileRoute("/_authenticated/ride")({
   validateSearch: (s: Record<string, unknown>): RideSearch => ({
-    pLat: num(s.pLat),
-    pLng: num(s.pLng),
-    pAddr: str(s.pAddr),
-    dLat: num(s.dLat),
-    dLng: num(s.dLng),
-    dAddr: str(s.dAddr),
-    promo: str(s.promo)?.toUpperCase(),
+    pLat: num(s["pLat"]),
+    pLng: num(s["pLng"]),
+    pAddr: str(s["pAddr"]),
+    dLat: num(s["dLat"]),
+    dLng: num(s["dLng"]),
+    dAddr: str(s["dAddr"]),
+    promo: str(s["promo"])?.toUpperCase(),
   }),
   head: () => ({
     meta: [

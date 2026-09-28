@@ -3,7 +3,7 @@ import { SignupForm } from "@/components/SignupForm";
 import { safeRedirect } from "@/lib/nav";
 
 export const Route = createFileRoute("/signup/rider")({
-  validateSearch: (s: Record<string, unknown>): { redirect?: string } => ({ redirect: safeRedirect(s.redirect) }),
+  validateSearch: (s: Record<string, unknown>): { redirect?: string | undefined } => ({ redirect: safeRedirect(s["redirect"]) }),
   head: () => ({
     meta: [
       { title: "Sign up to ride — Zoomo" },

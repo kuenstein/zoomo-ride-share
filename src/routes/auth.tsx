@@ -11,10 +11,10 @@ import { Logo } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { fetchHome, safeRedirect } from "@/lib/nav";
 
-type AuthSearch = { redirect?: string };
+type AuthSearch = { redirect?: string | undefined };
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>): AuthSearch => ({ redirect: safeRedirect(s.redirect) }),
+  validateSearch: (s: Record<string, unknown>): AuthSearch => ({ redirect: safeRedirect(s["redirect"]) }),
   head: () => ({
     meta: [
       { title: "Sign in — Zoomo" },
