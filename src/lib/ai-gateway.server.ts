@@ -50,6 +50,7 @@ export async function generateTextViaGateway(messages: ModelMessage[]): Promise<
   let text = "";
   for await (const chunk of result.textStream) text += chunk;
   if (failure || !text) {
+    console.error("gateway failure", failure);
     const status = (failure as { statusCode?: number } | undefined)?.statusCode ?? 500;
     if (status === 429) throw new GatewayError(429, "The assistant is busy. Please try again in a moment.");
     if (status === 402) throw new GatewayError(402, "The assistant is unavailable right now (AI credits exhausted).");
