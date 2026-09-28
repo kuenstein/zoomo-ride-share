@@ -1,24 +1,145 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { MapPin, Car, Star, Wallet, ShieldCheck, Clock } from "lucide-react";
+import heroImg from "@/assets/hero.jpg";
+import { Logo } from "@/components/Brand";
+import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Zoomo — Rides on demand, in seconds" },
+      {
+        name: "description",
+        content:
+          "Zoomo connects riders and drivers instantly. Live tracking, upfront fares, cash or wallet payments.",
+      },
+      { property: "og:title", content: "Zoomo — Rides on demand, in seconds" },
+      {
+        property: "og:description",
+        content:
+          "Zoomo connects riders and drivers instantly. Live tracking, upfront fares, cash or wallet payments.",
+      },
+    ],
+  }),
+  component: Landing,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const steps = [
+  { icon: MapPin, title: "Set your pickup", text: "We find you automatically, or drop the pin yourself." },
+  { icon: Car, title: "Pick your ride", text: "Economy, Comfort, XL or Bike — fare shown upfront." },
+  { icon: Star, title: "Track and rate", text: "Watch your driver arrive live, then rate the trip." },
+];
+
+const perks = [
+  { icon: Wallet, title: "Cash, card or wallet", text: "Top up your Zoomo wallet and pay in one tap." },
+  { icon: ShieldCheck, title: "Verified drivers", text: "Every driver is reviewed and approved before going online." },
+  { icon: Clock, title: "Fast matching", text: "Requests go to the closest online drivers within 5 km." },
+];
+
+function Landing() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
+    <div className="min-h-screen bg-background">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+          <Logo className="text-lg" />
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button asChild size="sm" variant="ghost">
+              <Link to="/auth">Sign in</Link>
+            </Button>
+            <Button asChild size="sm">
+              <Link to="/auth">Get started</Link>
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <section className="relative overflow-hidden">
+        <img
+          src={heroImg}
+          alt="A car driving through a city at night"
+          width={1536}
+          height={1024}
+          className="absolute inset-0 h-full w-full object-cover opacity-70 dark:opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/80 to-background" />
+        <div className="relative mx-auto max-w-5xl px-4 py-24 sm:py-32">
+          <p className="inline-flex rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
+            Rides on demand
+          </p>
+          <h1 className="mt-4 max-w-xl text-5xl font-bold leading-[1.05] sm:text-6xl">
+            Your city,
+            <br />
+            <span className="text-accent">one tap away.</span>
+          </h1>
+          <p className="mt-5 max-w-md text-base text-muted-foreground">
+            Book a ride in seconds with upfront pricing and live tracking. Or flip the switch and
+            earn on your own schedule.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild size="lg">
+              <Link to="/auth">Book a ride</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/auth">Become a driver</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 py-16">
+        <h2 className="text-3xl font-bold">How it works</h2>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {steps.map(({ icon: Icon, title, text }, i) => (
+            <div key={title} className="rounded-2xl border border-border bg-card p-6">
+              <div className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
+                <Icon className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-xs font-semibold text-muted-foreground">STEP {i + 1}</p>
+              <h3 className="mt-1 text-lg font-semibold">{title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-16">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {perks.map(({ icon: Icon, title, text }) => (
+            <div key={title} className="rounded-2xl bg-secondary p-6">
+              <Icon className="h-5 w-5 text-accent" />
+              <h3 className="mt-3 font-semibold">{title}</h3>
+              <p className="mt-1 text-sm text-muted-foreground">{text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-5xl px-4 pb-20">
+        <div className="rounded-3xl bg-ink p-8 text-ink-foreground sm:p-12">
+          <h2 className="max-w-md text-3xl font-bold">
+            Drive with Zoomo. Keep <span className="text-accent">80%</span> of every fare.
+          </h2>
+          <p className="mt-3 max-w-md text-sm opacity-80">
+            Sign up, add your vehicle, get approved, and go online whenever you want. Earnings land
+            in your wallet the moment a trip ends.
+          </p>
+          <Button asChild size="lg" className="mt-6">
+            <Link to="/auth">Start driving</Link>
+          </Button>
+        </div>
+      </section>
+
+      <footer className="border-t border-border">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <Logo className="text-base text-foreground" />
+          <p>© {new Date().getFullYear()} Zoomo. Rides, everywhere.</p>
+          <Link to="/auth" className="font-medium text-accent">
+            Sign in
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }
