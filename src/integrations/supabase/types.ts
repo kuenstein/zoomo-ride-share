@@ -734,6 +734,10 @@ export type Database = {
         Returns: Database["public"]["Enums"]["vehicle_type"]
       }
       expire_stale_rides: { Args: never; Returns: number }
+      has_active_ride_with: {
+        Args: { _driver: string; _rider: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -770,6 +774,7 @@ export type Database = {
         }
         Returns: number
       }
+      shares_ride: { Args: { _a: string; _b: string }; Returns: boolean }
       validate_promo: {
         Args: { _amount: number; _code: string }
         Returns: Json
