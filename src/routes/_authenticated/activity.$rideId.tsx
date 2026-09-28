@@ -122,8 +122,10 @@ function TripDetail() {
           const b = fareBreakdown(pricing, ride.vehicle_type, Number(ride.distance_km));
           return (
             <>
-              <Row label="Base fare" value={formatMoney(b.base)} />
-              <Row label={`Distance (${b.km} km × ${formatMoney(b.rate)})`} value={formatMoney(b.distance)} />
+              <Row label="Base fare (first km)" value={formatMoney(b.base)} />
+              {b.extraKm > 0 && (
+                <Row label={`Distance (${b.extraKm.toFixed(1)} km × ${formatMoney(b.rate)})`} value={formatMoney(b.distance)} />
+              )}
             </>
           );
         })()}

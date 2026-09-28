@@ -321,35 +321,29 @@ function PromoManager({ promos, onChange }: { promos: Promo[]; onChange: () => v
 
 type Pricing = Record<string, unknown>;
 
-const TYPE_SECTIONS = [
-  { t: "tricycle", title: "Tricycle" },
-  { t: "bike", title: "Motorcycle (habal-habal)" },
-] as const;
-const TYPE_FIELDS = [
-  { k: "base_fare", label: "Base fare (₱)" },
-  { k: "per_km", label: "Per km (₱)" },
-  { k: "minimum_fare", label: "Minimum fare (₱)" },
-  { k: "airport_fare", label: "Airport flat fare (₱)" },
-] as const;
-const GENERAL_FIELDS = [
+/** One simple fare rule shared by Tricycle and Motorcycle: flat fare covers the first km, then a per-km charge after that. */
+const SIMPLE_FIELDS = [
+  { key: "base_fare", label: "Fare for the first km (₱)" },
+  { key: "per_km", label: "Each km after the first (₱)" },
+  { key: "airport_fare", label: "Airport flat fare (₱)" },
   { key: "commission_percent", label: "Commission %" },
   { key: "airport_radius_km", label: "Airport zone radius (km)" },
 ] as const;
-const ALL_KEYS = [
-  ...TYPE_SECTIONS.flatMap((s) => TYPE_FIELDS.map((f) => `${f.k}_${s.t}`)),
-  ...GENERAL_FIELDS.map((f) => f.key),
-];
 
 function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => void }) {
-  const [form, setForm] = useState<Record<string, string>>(
-    Object.fromEntries(ALL_KEYS.map((k) => [k, String(pricing[k] ?? "")])),
-  );
+  const [form, setForm] = useState<Record<string, string>>({
+    base_fare: String(pricing["base_fare_tricycle"] ?? "20"),
+    per_km: String(pricing["per_km_tricycle"] ?? "15"),
+    airport_fare: String(pricing["airport_fare_tricycle"] ?? "150"),
+    commission_percent: String(pricing["commission_percent"] ?? "15"),
+    airport_radius_km: String(pricing["airport_radius_km"] ?? "3"),
+  });
   const [busy, setBusy] = useState(false);
   const num = (k: string) => Number(form[k]);
 
   const save = async () => {
-    for (const k of ALL_KEYS) {
-      if (form[k] === "" || !Number.isFinite(num(k)) || num(k) < 0) {
+    for (const f of SIMPLE_FIELDS) {
+      if (form[f.key] === "" || !Number.isFinite(num(f.key)) || num(f.key) < 0) {
         toast.error("Please enter valid, non-negative numbers in every field");
         return;
       }
@@ -359,7 +353,18 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
       return;
     }
     setBusy(true);
-    const patch = Object.fromEntries(ALL_KEYS.map((k) => [k, num(k)])) as Database["public"]["Tables"]["pricing_settings"]["Update"];
+    const patch = {
+      base_fare_tricycle: num("base_fare"),
+      base_fare_bike: num("base_fare"),
+      per_km_tricycle: num("per_km"),
+      per_km_bike: num("per_km"),
+      minimum_fare_tricycle: num("base_fare"),
+      minimum_fare_bike: num("base_fare"),
+      airport_fare_tricycle: num("airport_fare"),
+      airport_fare_bike: num("airport_fare"),
+      commission_percent: num("commission_percent"),
+      airport_radius_km: num("airport_radius_km"),
+    } as Database["public"]["Tables"]["pricing_settings"]["Update"];
     const { error } = await supabase.from("pricing_settings").update(patch).eq("id", 1);
     setBusy(false);
     if (error) {
@@ -370,38 +375,32 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
     onSaved();
   };
 
-  const field = (key: string, label: string) => (
-    <div key={key} className="space-y-1">
-      <Label htmlFor={key}>{label}</Label>
-      <Input
-        id={key}
-        type="number"
-        min={0}
-        step="0.01"
-        value={form[key]}
-        onChange={(e) => setForm((s) => ({ ...s, [key]: e.target.value }))}
-      />
-    </div>
-  );
+  const rates = { base: num("base_fare") || 0, perKm: num("per_km") || 0, minimum: num("base_fare") || 0 };
 
   return (
     <div className="space-y-4 rounded-2xl border border-border p-4">
-      {TYPE_SECTIONS.map((s) => {
-        const preview = fareFromRates(
-          { base: num(`base_fare_${s.t}`) || 0, perKm: num(`per_km_${s.t}`) || 0, minimum: num(`minimum_fare_${s.t}`) || 0 },
-          5,
-        );
-        return (
-          <div key={s.t} className="space-y-2">
-            <p className="font-semibold">{s.title}</p>
-            <div className="grid grid-cols-2 gap-3">{TYPE_FIELDS.map((f) => field(`${f.k}_${s.t}`, f.label))}</div>
-            <p className="text-xs text-muted-foreground">Preview: 5 km trip = {formatMoney(preview, { whole: true })}</p>
+      <p className="text-sm text-muted-foreground">
+        One simple rule for both Tricycle and Motorcycle rides: a flat fare covers the first kilometre, then each extra kilometre adds to the fare.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        {SIMPLE_FIELDS.map((f) => (
+          <div key={f.key} className="space-y-1">
+            <Label htmlFor={f.key}>{f.label}</Label>
+            <Input
+              id={f.key}
+              type="number"
+              min={0}
+              step="0.01"
+              value={form[f.key]}
+              onChange={(e) => setForm((s) => ({ ...s, [f.key]: e.target.value }))}
+            />
           </div>
-        );
-      })}
-      <div className="space-y-2">
-        <p className="font-semibold">General</p>
-        <div className="grid grid-cols-2 gap-3">{GENERAL_FIELDS.map((f) => field(f.key, f.label))}</div>
+        ))}
+      </div>
+      <div className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">
+        <p>Preview: 1 km trip = {formatMoney(fareFromRates(rates, 1), { whole: true })}</p>
+        <p>Preview: 3 km trip = {formatMoney(fareFromRates(rates, 3), { whole: true })}</p>
+        <p>Preview: 5 km trip = {formatMoney(fareFromRates(rates, 5), { whole: true })}</p>
       </div>
       <Button className="w-full" onClick={save} disabled={busy}>
         Save pricing
