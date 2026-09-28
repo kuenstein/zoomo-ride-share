@@ -106,6 +106,10 @@ export type Database = {
       }
       pricing_settings: {
         Row: {
+          airport_flat_fare: number
+          airport_lat: number
+          airport_lng: number
+          airport_radius_km: number
           base_fare: number
           commission_percent: number
           currency: string
@@ -114,12 +118,17 @@ export type Database = {
           multiplier_bike: number
           multiplier_comfort: number
           multiplier_economy: number
+          multiplier_tricycle: number
           multiplier_xl: number
           per_km: number
           per_minute: number
           updated_at: string
         }
         Insert: {
+          airport_flat_fare?: number
+          airport_lat?: number
+          airport_lng?: number
+          airport_radius_km?: number
           base_fare?: number
           commission_percent?: number
           currency?: string
@@ -128,12 +137,17 @@ export type Database = {
           multiplier_bike?: number
           multiplier_comfort?: number
           multiplier_economy?: number
+          multiplier_tricycle?: number
           multiplier_xl?: number
           per_km?: number
           per_minute?: number
           updated_at?: string
         }
         Update: {
+          airport_flat_fare?: number
+          airport_lat?: number
+          airport_lng?: number
+          airport_radius_km?: number
           base_fare?: number
           commission_percent?: number
           currency?: string
@@ -142,6 +156,7 @@ export type Database = {
           multiplier_bike?: number
           multiplier_comfort?: number
           multiplier_economy?: number
+          multiplier_tricycle?: number
           multiplier_xl?: number
           per_km?: number
           per_minute?: number
@@ -417,6 +432,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_areas: {
+        Row: {
+          active: boolean
+          center_lat: number
+          center_lng: number
+          created_at: string
+          id: string
+          name: string
+          radius_km: number
+        }
+        Insert: {
+          active?: boolean
+          center_lat: number
+          center_lng: number
+          created_at?: string
+          id?: string
+          name: string
+          radius_km?: number
+        }
+        Update: {
+          active?: boolean
+          center_lat?: number
+          center_lng?: number
+          created_at?: string
+          id?: string
+          name?: string
+          radius_km?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -446,6 +491,7 @@ export type Database = {
           id: string
           make: string
           model: string
+          or_cr_number: string | null
           plate: string
           type: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -456,6 +502,7 @@ export type Database = {
           id?: string
           make: string
           model: string
+          or_cr_number?: string | null
           plate: string
           type?: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -466,6 +513,7 @@ export type Database = {
           id?: string
           make?: string
           model?: string
+          or_cr_number?: string | null
           plate?: string
           type?: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -566,6 +614,10 @@ export type Database = {
         Args: { lat1: number; lat2: number; lng1: number; lng2: number }
         Returns: number
       }
+      in_service_area: {
+        Args: { _lat: number; _lng: number }
+        Returns: boolean
+      }
       nearby_drivers: {
         Args: { _lat: number; _lng: number; _radius_km?: number }
         Returns: {
@@ -574,6 +626,18 @@ export type Database = {
           lat: number
           lng: number
         }[]
+      }
+      ride_fare: {
+        Args: {
+          _dlat: number
+          _dlng: number
+          _km: number
+          _min: number
+          _plat: number
+          _plng: number
+          _type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Returns: number
       }
       validate_promo: {
         Args: { _amount: number; _code: string }
@@ -593,7 +657,7 @@ export type Database = {
         | "completed"
         | "cancelled"
         | "expired"
-      vehicle_type: "economy" | "comfort" | "xl" | "bike"
+      vehicle_type: "economy" | "comfort" | "xl" | "bike" | "tricycle"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -733,7 +797,7 @@ export const Constants = {
         "cancelled",
         "expired",
       ],
-      vehicle_type: ["economy", "comfort", "xl", "bike"],
+      vehicle_type: ["economy", "comfort", "xl", "bike", "tricycle"],
     },
   },
 } as const

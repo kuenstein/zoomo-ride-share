@@ -8,7 +8,15 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/Brand";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
+import { Input } from "@/components/ui/input";
+
+const METHODS = [
+  { id: "gcash", label: "GCash" },
+  { id: "maya", label: "Maya" },
+  { id: "card", label: "Card" },
+  { id: "cash", label: "Cash (at partner outlet)" },
+] as const;
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
@@ -26,6 +34,8 @@ function WalletPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [method, setMethod] = useState<(typeof METHODS)[number]["id"]>("gcash");
+  const [custom, setCustom] = useState("");
 
   const { data: wallet, isLoading } = useQuery({
     queryKey: ["wallet", user?.id],
@@ -58,7 +68,8 @@ function WalletPage() {
       toast.error(res?.message ?? "Top-up failed");
       return;
     }
-    toast.success(`Added ${formatMoney(amount)} to your wallet`);
+    toast.success(`Added ${formatMoney(amount)} via ${METHODS.find((m) => m.id === method)?.label} (simulated)`);
+    setCustom("");
     void qc.invalidateQueries({ queryKey: ["wallet"] });
     void qc.invalidateQueries({ queryKey: ["wallet-txns"] });
   };
@@ -77,14 +88,36 @@ function WalletPage() {
         <p className="mt-2 text-xs opacity-70">Wallet payments are deducted automatically at trip end.</p>
       </div>
 
-      <div className="mt-4">
-        <p className="mb-2 text-sm font-semibold">Quick top-up (simulated)</p>
-        <div className="flex gap-2">
-          {[10, 25, 50, 100].map((a) => (
-            <Button key={a} variant="outline" className="flex-1" disabled={busy} onClick={() => topUp(a)}>
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : `$${a}`}
+      <div className="mt-4 space-y-3">
+        <p className="text-sm font-semibold">Pay with (simulated)</p>
+        <div className="grid grid-cols-2 gap-2">
+          {METHODS.map((m) => (
+            <Button key={m.id} size="sm" variant={method === m.id ? "default" : "outline"} onClick={() => setMethod(m.id)}>
+              {m.label}
             </Button>
           ))}
+        </div>
+        <p className="text-sm font-semibold">Top-up amount</p>
+        <div className="grid grid-cols-4 gap-2">
+          {[100, 200, 500, 1000].map((a) => (
+            <Button key={a} variant="outline" disabled={busy} onClick={() => topUp(a)}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : formatMoney(a, { whole: true })}
+            </Button>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            inputMode="numeric"
+            min={50}
+            max={10000}
+            placeholder="Custom amount (₱50–₱10,000)"
+            value={custom}
+            onChange={(e) => setCustom(e.target.value)}
+          />
+          <Button disabled={busy || !custom} onClick={() => topUp(Math.round(Number(custom)))}>
+            Top up
+          </Button>
         </div>
       </div>
 
@@ -104,7 +137,7 @@ function WalletPage() {
               </div>
               <div className="flex-1">
                 <p className="text-sm font-medium">{t.description ?? t.kind}</p>
-                <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">{formatDateTime(t.created_at)}</p>
               </div>
               <p className={`font-semibold ${positive ? "text-accent" : ""}`}>
                 {positive ? "+" : "-"}

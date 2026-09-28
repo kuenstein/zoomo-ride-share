@@ -84,7 +84,7 @@ export function RatingDialog({
           <div>
             <p className="mb-2 text-sm font-medium">Add a tip</p>
             <div className="flex gap-2">
-              {[0, 1, 2, 5].map((t) => (
+              {[0, 20, 50, 100].map((t) => (
                 <Button
                   key={t}
                   type="button"
@@ -92,7 +92,7 @@ export function RatingDialog({
                   size="sm"
                   onClick={() => setTip(t)}
                 >
-                  {t === 0 ? "No tip" : `$${t}`}
+                  {t === 0 ? "No tip" : `₱${t}`}
                 </Button>
               ))}
             </div>

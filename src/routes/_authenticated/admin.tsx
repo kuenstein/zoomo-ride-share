@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/Brand";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -135,6 +135,7 @@ function AdminDashboard() {
           <TabsTrigger value="rides" className="flex-1">Rides</TabsTrigger>
           <TabsTrigger value="promos" className="flex-1">Promos</TabsTrigger>
           <TabsTrigger value="pricing" className="flex-1">Pricing</TabsTrigger>
+          <TabsTrigger value="areas" className="flex-1">Areas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="drivers" className="space-y-2">
@@ -191,7 +192,7 @@ function AdminDashboard() {
               <div className="flex-1 overflow-hidden">
                 <p className="truncate text-sm font-medium">{r.dropoff_address}</p>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()} · {STATUS_LABEL[r.status]}
+                  {formatDateTime(r.created_at)} · {STATUS_LABEL[r.status]}
                 </p>
               </div>
               <div className="text-right text-sm">
@@ -216,6 +217,10 @@ function AdminDashboard() {
               }}
             />
           )}
+        </TabsContent>
+
+        <TabsContent value="areas">
+          <AreaManager />
         </TabsContent>
       </Tabs>
     </div>
@@ -304,6 +309,9 @@ type Pricing = {
   multiplier_comfort: number;
   multiplier_xl: number;
   multiplier_bike: number;
+  multiplier_tricycle: number;
+  airport_flat_fare: number;
+  airport_radius_km: number;
 };
 
 const FIELDS: { key: keyof Pricing; label: string }[] = [
@@ -315,7 +323,10 @@ const FIELDS: { key: keyof Pricing; label: string }[] = [
   { key: "multiplier_economy", label: "Economy ×" },
   { key: "multiplier_comfort", label: "Comfort ×" },
   { key: "multiplier_xl", label: "XL ×" },
-  { key: "multiplier_bike", label: "Bike ×" },
+  { key: "multiplier_tricycle", label: "Tricycle ×" },
+  { key: "multiplier_bike", label: "Motorcycle (habal-habal) ×" },
+  { key: "airport_flat_fare", label: "Airport flat fare (₱)" },
+  { key: "airport_radius_km", label: "Airport zone radius (km)" },
 ];
 
 function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => void }) {
@@ -356,6 +367,95 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
       <Button className="w-full" onClick={save} disabled={busy}>
         Save pricing
       </Button>
+    </div>
+  );
+}
+
+type Area = { id: string; name: string; center_lat: number; center_lng: number; radius_km: number; active: boolean };
+
+function AreaManager() {
+  const qc = useQueryClient();
+  const { data: areas } = useQuery({
+    queryKey: ["admin-areas"],
+    queryFn: async () => {
+      const { data } = await supabase.from("service_areas").select("*").order("name");
+      return (data ?? []) as Area[];
+    },
+  });
+  const [form, setForm] = useState({ name: "", lat: "", lng: "", radius: "5" });
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: ["admin-areas"] });
+    void qc.invalidateQueries({ queryKey: ["service-areas"] });
+  };
+  const add = async () => {
+    const { error } = await supabase.from("service_areas").insert({
+      name: form.name.trim(),
+      center_lat: Number(form.lat),
+      center_lng: Number(form.lng),
+      radius_km: Number(form.radius),
+    });
+    if (error) { toast.error("Could not add area"); return; }
+    toast.success("Service area added");
+    setForm({ name: "", lat: "", lng: "", radius: "5" });
+    refresh();
+  };
+  const update = async (a: Area, patch: Partial<Area>) => {
+    const { error } = await supabase.from("service_areas").update(patch).eq("id", a.id);
+    if (error) { toast.error("Could not update area"); return; }
+    toast.success("Area updated");
+    refresh();
+  };
+  const remove = async (a: Area) => {
+    const { error } = await supabase.from("service_areas").delete().eq("id", a.id);
+    if (error) { toast.error("Could not delete area"); return; }
+    toast.success("Area removed");
+    refresh();
+  };
+  return (
+    <div className="space-y-3">
+      {(areas ?? []).map((a) => (
+        <div key={a.id} className="space-y-2 rounded-2xl border border-border p-3">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold">{a.name}</p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => update(a, { active: !a.active })}>
+                {a.active ? "Disable" : "Enable"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => remove(a)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {a.center_lat}, {a.center_lng}
+          </p>
+          <div className="flex items-center gap-2">
+            <Label className="text-xs">Radius km</Label>
+            <Input
+              type="number"
+              step="0.5"
+              defaultValue={a.radius_km}
+              className="h-8 w-24"
+              onBlur={(e) => {
+                const v = Number(e.target.value);
+                if (v > 0 && v !== Number(a.radius_km)) void update(a, { radius_km: v });
+              }}
+            />
+          </div>
+        </div>
+      ))}
+      <div className="space-y-2 rounded-2xl border border-border p-3">
+        <p className="font-semibold">Add service area</p>
+        <Input placeholder="Name (e.g. Dauin)" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <div className="grid grid-cols-3 gap-2">
+          <Input placeholder="Lat" type="number" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} />
+          <Input placeholder="Lng" type="number" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} />
+          <Input placeholder="Radius km" type="number" value={form.radius} onChange={(e) => setForm({ ...form, radius: e.target.value })} />
+        </div>
+        <Button className="w-full" onClick={add} disabled={!form.name.trim() || !form.lat || !form.lng}>
+          Add area
+        </Button>
+      </div>
     </div>
   );
 }

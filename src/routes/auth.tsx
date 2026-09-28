@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { normalizePhMobile, PHONE_PLACEHOLDER } from "@/lib/locale";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -52,12 +53,14 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
+        const normPhone = phone.trim() ? normalizePhMobile(phone) : null;
+        if (phone.trim() && !normPhone) throw new Error("Enter a valid PH mobile number, e.g. 0917 123 4567");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: fullName, phone, role },
+            data: { full_name: fullName, phone: normPhone, role },
           },
         });
         if (error) throw error;
@@ -134,7 +137,8 @@ function AuthPage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 555 000 1234" />
+                    <Input id="phone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={PHONE_PLACEHOLDER} />
+                    <p className="text-xs text-muted-foreground">Philippine mobile, e.g. 09XX XXX XXXX</p>
                   </div>
                   <div className="space-y-2">
                     <Label>I want to</Label>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/Brand";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/activity")({
@@ -86,7 +86,7 @@ function ActivityPage() {
             <div className="flex-1 overflow-hidden">
               <p className="truncate text-sm font-semibold">{r.dropoff_address}</p>
               <p className="truncate text-xs text-muted-foreground">
-                {new Date(r.created_at).toLocaleString()} · {r.distance_km} km
+                {formatDateTime(r.created_at)} · {r.distance_km} km
               </p>
               <Badge variant="secondary" className="mt-1 text-[10px]">
                 {STATUS_LABEL[r.status] ?? r.status}

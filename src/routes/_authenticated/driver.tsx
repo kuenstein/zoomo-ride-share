@@ -21,7 +21,7 @@ import {
   haversineKm,
   type LatLng,
 } from "@/lib/geo";
-import { VEHICLE_OPTIONS, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { DRIVER_VEHICLES, VEHICLE_OPTIONS, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -86,6 +86,7 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
   const [model, setModel] = useState("");
   const [color, setColor] = useState("");
   const [plate, setPlate] = useState("");
+  const [orcr, setOrcr] = useState("");
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -102,7 +103,7 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
       if (error) throw error;
       const { error: vErr } = await supabase
         .from("vehicles")
-        .insert({ driver_id: d.id, type, make, model, color, plate });
+        .insert({ driver_id: d.id, type, make, model, color, plate, or_cr_number: orcr });
       if (vErr) throw vErr;
       toast.success("Application submitted for review");
       await onDone();
@@ -120,13 +121,13 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
       <p className="text-sm text-muted-foreground">Tell us about you and your vehicle. Approval is manual.</p>
       <form onSubmit={submit} className="mt-5 space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="lic">Driver's license number</Label>
-          <Input id="lic" value={license} onChange={(e) => setLicense(e.target.value)} required />
+          <Label htmlFor="lic">LTO driver's license number</Label>
+          <Input id="lic" value={license} onChange={(e) => setLicense(e.target.value.toUpperCase())} placeholder="e.g. G12-34-567890" required />
         </div>
         <div className="space-y-2">
           <Label>Vehicle type</Label>
           <div className="grid grid-cols-2 gap-2">
-            {VEHICLE_OPTIONS.map((v) => (
+            {DRIVER_VEHICLES.map((v) => (
               <button
                 key={v.type}
                 type="button"
@@ -155,9 +156,13 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
             <Input id="cl" value={color} onChange={(e) => setColor(e.target.value)} required />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="pl">Plate</Label>
+            <Label htmlFor="pl">Plate number (per OR/CR)</Label>
             <Input id="pl" value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} required />
           </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="orcr">OR/CR number</Label>
+          <Input id="orcr" value={orcr} onChange={(e) => setOrcr(e.target.value.toUpperCase())} placeholder="Official Receipt / Certificate of Registration no." required />
         </div>
         <Button type="submit" className="w-full" disabled={busy}>
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Submit application"}

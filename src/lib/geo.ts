@@ -51,7 +51,8 @@ export async function getRoute(from: LatLng, to: LatLng): Promise<RouteResult> {
 
 export async function searchAddress(query: string): Promise<Place[]> {
   if (query.trim().length < 3) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&q=${encodeURIComponent(query)}`;
+  // Philippines only, biased toward Negros Oriental (Dumaguete, Bacong, Sibulan, Valencia)
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=6&countrycodes=ph&viewbox=123.15,9.45,123.40,9.18&bounded=0&q=${encodeURIComponent(query)}`;
   const res = await fetch(url, { headers: { Accept: "application/json" } });
   if (!res.ok) return [];
   const json = (await res.json()) as { lat: string; lon: string; display_name: string }[];
@@ -88,8 +89,7 @@ export function getCurrentPosition(): Promise<LatLng> {
   });
 }
 
-export const DEFAULT_CENTER: LatLng = { lat: 40.7128, lng: -74.006 };
+export const DEFAULT_CENTER: LatLng = { lat: 9.3068, lng: 123.3054 };
+export const DEFAULT_ZOOM = 13;
 
-export function formatMoney(n: number | null | undefined, currency = "$"): string {
-  return `${currency}${(Number(n ?? 0)).toFixed(2)}`;
-}
+export { formatMoney, formatDateTime, formatDate } from "./locale";

@@ -1,0 +1,2 @@
+ALTER FUNCTION public.in_service_area(double precision,double precision) SECURITY INVOKER;
+ALTER FUNCTION public.ride_fare(vehicle_type,numeric,numeric,double precision,double precision,double precision,double precision) SECURITY INVOKER;

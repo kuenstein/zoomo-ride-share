@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { EmptyState } from "@/components/Brand";
 import { searchAddress, type Place } from "@/lib/geo";
+import { normalizePhMobile, formatPhMobile, PHONE_PLACEHOLDER } from "@/lib/locale";
 
 export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
@@ -40,7 +41,7 @@ function AccountPage() {
 
   useEffect(() => {
     setFullName(profile?.full_name ?? "");
-    setPhone(profile?.phone ?? "");
+    setPhone(formatPhMobile(profile?.phone));
     setAvatar(profile?.avatar_url ?? "");
   }, [profile]);
 
@@ -55,10 +56,15 @@ function AccountPage() {
 
   const save = async () => {
     if (!user) return;
+    const normPhone = phone.trim() ? normalizePhMobile(phone) : null;
+    if (phone.trim() && !normPhone) {
+      toast.error("Enter a valid PH mobile number, e.g. 0917 123 4567");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName, phone: phone || null, avatar_url: avatar || null })
+      .update({ full_name: fullName, phone: normPhone, avatar_url: avatar || null })
       .eq("id", user.id);
     setSaving(false);
     if (error) {
@@ -146,7 +152,7 @@ function AccountPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="ph">Phone</Label>
-          <Input id="ph" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <Input id="ph" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={PHONE_PLACEHOLDER} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="av">Avatar URL</Label>
@@ -173,7 +179,7 @@ function AccountPage() {
         </div>
         <div className="flex gap-2">
           <Input
-            placeholder="Search an address"
+            placeholder={`Search ${placeLabel === "Other" ? "a place" : placeLabel.toLowerCase() + " address"} in Dumaguete area`}
             value={placeQuery}
             onChange={(e) => setPlaceQuery(e.target.value)}
           />

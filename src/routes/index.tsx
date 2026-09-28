@@ -8,17 +8,19 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Zoomo — Rides on demand, in seconds" },
+      { title: "Zoomo — Rides in Dumaguete, Padulong na ta!" },
       {
         name: "description",
         content:
-          "Zoomo connects riders and drivers instantly. Live tracking, upfront fares, cash or wallet payments.",
+          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, GCash, Maya or cash.",
       },
-      { property: "og:title", content: "Zoomo — Rides on demand, in seconds" },
+      { property: "og:title", content: "Zoomo — Rides in Dumaguete, Padulong na ta!" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content:
-          "Zoomo connects riders and drivers instantly. Live tracking, upfront fares, cash or wallet payments.",
+          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, GCash, Maya or cash.",
       },
     ],
   }),
@@ -27,12 +29,12 @@ export const Route = createFileRoute("/")({
 
 const steps = [
   { icon: MapPin, title: "Set your pickup", text: "We find you automatically, or drop the pin yourself." },
-  { icon: Car, title: "Pick your ride", text: "Economy, Comfort, XL or Bike — fare shown upfront." },
+  { icon: Car, title: "Pick your ride", text: "Tricycle, Motorcycle, Economy, Comfort or XL — fare in pesos, shown upfront." },
   { icon: Star, title: "Track and rate", text: "Watch your driver arrive live, then rate the trip." },
 ];
 
 const perks = [
-  { icon: Wallet, title: "Cash, card or wallet", text: "Top up your Zoomo wallet and pay in one tap." },
+  { icon: Wallet, title: "Cash, GCash, Maya or card", text: "Top up your Zoomo wallet in pesos and pay in one tap." },
   { icon: ShieldCheck, title: "Verified drivers", text: "Every driver is reviewed and approved before going online." },
   { icon: Clock, title: "Fast matching", text: "Requests go to the closest online drivers within 5 km." },
 ];
@@ -66,16 +68,16 @@ function Landing() {
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/80 to-background" />
         <div className="relative mx-auto max-w-5xl px-4 py-24 sm:py-32">
           <p className="inline-flex rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-xs font-semibold text-accent">
-            Rides on demand
+            Padulong na ta! · Dumaguete City
           </p>
           <h1 className="mt-4 max-w-xl text-5xl font-bold leading-[1.05] sm:text-6xl">
-            Your city,
+            Dumaguete,
             <br />
             <span className="text-accent">one tap away.</span>
           </h1>
           <p className="mt-5 max-w-md text-base text-muted-foreground">
-            Book a ride in seconds with upfront pricing and live tracking. Or flip the switch and
-            earn on your own schedule.
+            Tricycle, habal-habal, car or multicab — booked in seconds with upfront peso fares and
+            live tracking. Serving Dumaguete City, Bacong, Sibulan and Valencia. Tara, sakay na!
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
@@ -116,13 +118,35 @@ function Landing() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-5xl px-4 pb-16">
+        <h2 className="text-3xl font-bold">Where we ride</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Asa ka padulong? Zoomo currently covers these towns in Negros Oriental — more soon.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_1.4fr]">
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+            {["Dumaguete City", "Bacong", "Sibulan", "Valencia"].map((t) => (
+              <li key={t} className="flex items-center gap-2 rounded-2xl border border-border bg-card p-4 font-semibold">
+                <MapPin className="h-4 w-4 text-accent" /> {t}
+              </li>
+            ))}
+          </ul>
+          <iframe
+            title="Zoomo coverage map: Dumaguete, Bacong, Sibulan and Valencia"
+            className="h-72 w-full rounded-2xl border border-border sm:h-full"
+            loading="lazy"
+            src="https://www.openstreetmap.org/export/embed.html?bbox=123.19%2C9.22%2C123.35%2C9.39&layer=mapnik&marker=9.3068%2C123.3054"
+          />
+        </div>
+      </section>
+
       <section className="mx-auto max-w-5xl px-4 pb-20">
         <div className="rounded-3xl bg-ink p-8 text-ink-foreground sm:p-12">
           <h2 className="max-w-md text-3xl font-bold">
-            Drive with Zoomo. Keep <span className="text-accent">80%</span> of every fare.
+            Drive with Zoomo. Keep <span className="text-accent">85%</span> of every fare.
           </h2>
           <p className="mt-3 max-w-md text-sm opacity-80">
-            Sign up, add your vehicle, get approved, and go online whenever you want. Earnings land
+            Tricycle, motorcycle, car or van/multicab — sign up with your LTO license and OR/CR, get approved, and go online whenever you want. Earnings land
             in your wallet the moment a trip ends.
           </p>
           <Button asChild size="lg" className="mt-6">
@@ -134,7 +158,7 @@ function Landing() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="text-base text-foreground" />
-          <p>© {new Date().getFullYear()} Zoomo. Rides, everywhere.</p>
+          <p>© {new Date().getFullYear()} Zoomo. Proudly from Dumaguete, Negros Oriental.</p>
           <Link to="/auth" className="font-medium text-accent">
             Sign in
           </Link>
