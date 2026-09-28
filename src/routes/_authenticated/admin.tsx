@@ -12,6 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { formatPhMobile } from "@/lib/locale";
+import { DriverDocsReview, LaunchChecklist, ReportsAdmin, SafetyAdmin, useOpenIncidentCount } from "@/components/AdminLaunch";
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { PayoutsAdmin } from "@/components/PayoutsAdmin";
@@ -49,6 +51,7 @@ function AdminPage() {
 
 function AdminDashboard() {
   const qc = useQueryClient();
+  const openIncidents = useOpenIncidentCount();
 
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
@@ -105,9 +108,13 @@ function AdminDashboard() {
   });
 
   const setDriverStatus = async (id: string, status: "approved" | "rejected") => {
-    const { error } = await supabase.from("drivers").update({ status }).eq("id", id);
+    let rejection_reason: string | null = null;
+    if (status === "rejected") {
+      rejection_reason = window.prompt("Reason (shown to the driver)")?.trim() || null;
+    }
+    const { error } = await supabase.from("drivers").update({ status, rejection_reason }).eq("id", id);
     if (error) {
-      toast.error("Could not update driver");
+      toast.error(error.message.includes("documents") ? "Approve all four documents first" : "Could not update driver");
       return;
     }
     toast.success(`Driver ${status}`);
@@ -118,7 +125,12 @@ function AdminDashboard() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Admin</h1>
+        <h1 className="flex items-center gap-2 text-2xl font-bold">
+          Admin
+          {openIncidents > 0 && (
+            <span className="rounded-full bg-destructive px-2 py-0.5 text-xs font-bold text-destructive-foreground">{openIncidents} SOS</span>
+          )}
+        </h1>
         <Link to="/account" className="inline-flex items-center gap-1 text-sm font-medium text-accent">
           <ArrowLeft className="h-4 w-4" /> Back to app
         </Link>
@@ -136,6 +148,14 @@ function AdminDashboard() {
           <TabsTrigger value="areas">Areas</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
+          <TabsTrigger value="safety" className="gap-1">
+            Safety
+            {openIncidents > 0 && (
+              <span className="rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">{openIncidents}</span>
+            )}
+          </TabsTrigger>
+          <TabsTrigger value="reports">Reports</TabsTrigger>
+          <TabsTrigger value="launch">Launch checklist</TabsTrigger>
         </TabsList>
         </div>
 
@@ -171,6 +191,9 @@ function AdminDashboard() {
                   <p className="text-xs text-muted-foreground">
                     License {d.license_number} · {d.total_trips} trips
                   </p>
+                  <p className="text-xs text-muted-foreground">
+                    Phone: {d.profile?.phone ? formatPhMobile(d.profile.phone) : "not provided"} (not SMS-verified)
+                  </p>
                   {d.vehicle && (
                     <p className="text-xs text-muted-foreground">
                       {vehicleLabel(d.vehicle.type)}{!isSupportedType(d.vehicle.type) && " (unsupported)"} · {d.vehicle.color} {d.vehicle.make} {d.vehicle.model} · {d.vehicle.plate}
@@ -179,6 +202,7 @@ function AdminDashboard() {
                 </div>
                 <Badge variant={d.status === "approved" ? "default" : "secondary"}>{d.status}</Badge>
               </div>
+              <DriverDocsReview userId={d.user_id} driverId={d.id} licenseExpiry={d.license_expiry} />
               {d.status !== "approved" && (
                 <div className="mt-2 flex gap-2">
                   <Button size="sm" className="flex-1" onClick={() => setDriverStatus(d.id, "approved")}>
@@ -248,6 +272,16 @@ function AdminDashboard() {
 
         <TabsContent value="payouts" className="space-y-4">
           <PayoutsAdmin />
+        </TabsContent>
+
+        <TabsContent value="safety">
+          <SafetyAdmin />
+        </TabsContent>
+        <TabsContent value="reports">
+          <ReportsAdmin />
+        </TabsContent>
+        <TabsContent value="launch">
+          <LaunchChecklist />
         </TabsContent>
 
         <TabsContent value="areas">
