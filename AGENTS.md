@@ -16,3 +16,4 @@
 - Wallet top-ups go through PayMongo checkout (`src/lib/payments.functions.ts`); the wallet is credited only by the signature-verified webhook `/api/public/paymongo-webhook` via `credit_paid_checkout` (service role) — never from the client.
 - AI Gateway calls live in `src/lib/ai-gateway.server.ts` (streamed Responses, `system` option for instructions) — keeps the key server-side.
 - Navigation mode (rider/driver bottom nav) is derived from the page path, falling back to the last mode saved in `src/lib/nav.ts`; role-based home screens come from `homeForRoles()` there — one source of truth for post-login and 404 redirects.
+- Privacy RLS regression tests live in `supabase/tests/rls_privacy_policies.sql` (self-contained, rolls back) — rerun after any policy change on profiles/drivers/vehicles/driver_locations/pricing.
