@@ -3,7 +3,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
+import { Check, X, ThumbsUp, ThumbsDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -133,6 +133,7 @@ function AdminDashboard() {
           <TabsTrigger value="promos">Promos</TabsTrigger>
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="areas">Areas</TabsTrigger>
+          <TabsTrigger value="feedback">Feedback</TabsTrigger>
         </TabsList>
         </div>
 
@@ -239,6 +240,10 @@ function AdminDashboard() {
           )}
         </TabsContent>
 
+        <TabsContent value="feedback" className="space-y-2">
+          <FeedbackInbox />
+        </TabsContent>
+
         <TabsContent value="areas">
           <AreaManager />
         </TabsContent>
@@ -325,6 +330,9 @@ type Pricing = Record<string, unknown>;
 const SIMPLE_FIELDS = [
   { key: "base_fare", label: "Fare for the first km (₱)" },
   { key: "per_km", label: "Each km after the first (₱)" },
+  { key: "tricycle_surcharge", label: "Tricycle extra vs motorcycle (₱)" },
+  { key: "extra_passenger_fee", label: "Tricycle: each extra passenger (₱)" },
+  { key: "baggage_fee", label: "Tricycle: extra baggage (₱)" },
   { key: "airport_fare", label: "Airport flat fare (₱)" },
   { key: "commission_percent", label: "Commission %" },
   { key: "airport_radius_km", label: "Airport zone radius (km)" },
@@ -335,6 +343,9 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
     base_fare: String(pricing["base_fare_tricycle"] ?? "20"),
     per_km: String(pricing["per_km_tricycle"] ?? "15"),
     airport_fare: String(pricing["airport_fare_tricycle"] ?? "150"),
+    tricycle_surcharge: String(pricing["tricycle_surcharge"] ?? "10"),
+    extra_passenger_fee: String(pricing["extra_passenger_fee"] ?? "15"),
+    baggage_fee: String(pricing["baggage_fee"] ?? "15"),
     commission_percent: String(pricing["commission_percent"] ?? "15"),
     airport_radius_km: String(pricing["airport_radius_km"] ?? "3"),
   });
@@ -362,6 +373,9 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
       minimum_fare_bike: num("base_fare"),
       airport_fare_tricycle: num("airport_fare"),
       airport_fare_bike: num("airport_fare"),
+      tricycle_surcharge: num("tricycle_surcharge"),
+      extra_passenger_fee: num("extra_passenger_fee"),
+      baggage_fee: num("baggage_fee"),
       commission_percent: num("commission_percent"),
       airport_radius_km: num("airport_radius_km"),
     } as Database["public"]["Tables"]["pricing_settings"]["Update"];
@@ -380,7 +394,7 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
   return (
     <div className="space-y-4 rounded-2xl border border-border p-4">
       <p className="text-sm text-muted-foreground">
-        One simple rule for both Tricycle and Motorcycle rides: a flat fare covers the first kilometre, then each extra kilometre adds to the fare.
+        A flat fare covers the first kilometre, then each extra kilometre adds to the fare. Tricycles add their own extra, plus fees for extra passengers and baggage.
       </p>
       <div className="grid grid-cols-2 gap-3">
         {SIMPLE_FIELDS.map((f) => (
@@ -398,9 +412,12 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
         ))}
       </div>
       <div className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">
-        <p>Preview: 1 km trip = {formatMoney(fareFromRates(rates, 1), { whole: true })}</p>
-        <p>Preview: 3 km trip = {formatMoney(fareFromRates(rates, 3), { whole: true })}</p>
-        <p>Preview: 5 km trip = {formatMoney(fareFromRates(rates, 5), { whole: true })}</p>
+        {[1, 3, 5].map((km) => (
+          <p key={km}>
+            {km} km: Motorcycle {formatMoney(fareFromRates(rates, km), { whole: true })} · Tricycle{" "}
+            {formatMoney(fareFromRates(rates, km) + Math.round(num("tricycle_surcharge") || 0), { whole: true })}
+          </p>
+        ))}
       </div>
       <Button className="w-full" onClick={save} disabled={busy}>
         Save pricing
@@ -526,6 +543,67 @@ function AdminUsers() {
             {u.roles.map((r) => (
               <span key={r} className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold capitalize">{r}</span>
             ))}
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+function FeedbackInbox() {
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-feedback"],
+    queryFn: async () => {
+      const { data: rows } = await supabase
+        .from("driver_feedback")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      const list = rows ?? [];
+      const ids = [...new Set(list.flatMap((r) => [r.rider_id, r.driver_id]))];
+      const { data: profs } = ids.length
+        ? await supabase.from("profiles").select("id, full_name").in("id", ids)
+        : { data: [] as { id: string; full_name: string }[] };
+      const names = Object.fromEntries((profs ?? []).map((p) => [p.id, p.full_name]));
+      return list.map((r) => ({ ...r, rider: names[r.rider_id] ?? "Rider", driver: names[r.driver_id] ?? "Driver" }));
+    },
+  });
+  const markReviewed = async (id: string) => {
+    const { error } = await supabase.from("driver_feedback").update({ status: "reviewed" }).eq("id", id);
+    if (error) { toast.error("Could not update feedback"); return; }
+    toast.success("Marked as reviewed");
+    void qc.invalidateQueries({ queryKey: ["admin-feedback"] });
+  };
+  if (isLoading) return <Skeleton className="h-24 w-full" />;
+  if (!data?.length) return <EmptyState title="No rider feedback yet" />;
+  const newCount = data.filter((f) => f.status === "new").length;
+  return (
+    <>
+      <p className="text-xs text-muted-foreground">{newCount} new · {data.length} total</p>
+      {data.map((f) => (
+        <div key={f.id} className="rounded-2xl border border-border p-3">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {f.sentiment === "like" ? (
+                <ThumbsUp className="h-4 w-4 text-accent" />
+              ) : (
+                <ThumbsDown className="h-4 w-4 text-destructive" />
+              )}
+              <p className="text-sm font-semibold">
+                {f.rider} → {f.driver}
+              </p>
+            </div>
+            <Badge variant={f.status === "new" ? "default" : "secondary"}>{f.status}</Badge>
+          </div>
+          {f.comment && <p className="mt-2 text-sm">{f.comment}</p>}
+          <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+            <span>{formatDateTime(f.created_at)}</span>
+            {f.status === "new" && (
+              <Button size="sm" variant="outline" onClick={() => markReviewed(f.id)}>
+                <Check className="mr-1 h-3 w-3" /> Mark reviewed
+              </Button>
+            )}
           </div>
         </div>
       ))}
