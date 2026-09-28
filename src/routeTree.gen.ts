@@ -18,6 +18,8 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
+import { Route as AuthenticatedPlacesRouteImport } from './routes/_authenticated/places'
+import { Route as AuthenticatedPromosRouteImport } from './routes/_authenticated/promos'
 import { Route as AuthenticatedRideRouteImport } from './routes/_authenticated/ride'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as SignupDriverRouteImport } from './routes/signup.driver'
@@ -70,6 +72,16 @@ const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
   path: '/driver',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPlacesRoute = AuthenticatedPlacesRouteImport.update({
+  id: '/places',
+  path: '/places',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPromosRoute = AuthenticatedPromosRouteImport.update({
+  id: '/promos',
+  path: '/promos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRideRoute = AuthenticatedRideRouteImport.update({
   id: '/ride',
   path: '/ride',
@@ -118,6 +130,8 @@ export interface FileRoutesByFullPath {
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/driver': typeof AuthenticatedDriverRouteWithChildren
+  '/places': typeof AuthenticatedPlacesRoute
+  '/promos': typeof AuthenticatedPromosRoute
   '/ride': typeof AuthenticatedRideRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/signup/driver': typeof SignupDriverRoute
@@ -135,6 +149,8 @@ export interface FileRoutesByTo {
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
   '/driver': typeof AuthenticatedDriverRouteWithChildren
+  '/places': typeof AuthenticatedPlacesRoute
+  '/promos': typeof AuthenticatedPromosRoute
   '/ride': typeof AuthenticatedRideRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/signup/driver': typeof SignupDriverRoute
@@ -154,6 +170,8 @@ export interface FileRoutesById {
   '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/driver': typeof AuthenticatedDriverRouteWithChildren
+  '/_authenticated/places': typeof AuthenticatedPlacesRoute
+  '/_authenticated/promos': typeof AuthenticatedPromosRoute
   '/_authenticated/ride': typeof AuthenticatedRideRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/signup/driver': typeof SignupDriverRoute
@@ -173,6 +191,8 @@ export interface FileRouteTypes {
     | '/activity'
     | '/admin'
     | '/driver'
+    | '/places'
+    | '/promos'
     | '/ride'
     | '/wallet'
     | '/signup/driver'
@@ -190,6 +210,8 @@ export interface FileRouteTypes {
     | '/activity'
     | '/admin'
     | '/driver'
+    | '/places'
+    | '/promos'
     | '/ride'
     | '/wallet'
     | '/signup/driver'
@@ -208,6 +230,8 @@ export interface FileRouteTypes {
     | '/_authenticated/activity'
     | '/_authenticated/admin'
     | '/_authenticated/driver'
+    | '/_authenticated/places'
+    | '/_authenticated/promos'
     | '/_authenticated/ride'
     | '/_authenticated/wallet'
     | '/signup/driver'
@@ -293,6 +317,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDriverRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/places': {
+      id: '/_authenticated/places'
+      path: '/places'
+      fullPath: '/places'
+      preLoaderRoute: typeof AuthenticatedPlacesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/promos': {
+      id: '/_authenticated/promos'
+      path: '/promos'
+      fullPath: '/promos'
+      preLoaderRoute: typeof AuthenticatedPromosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ride': {
       id: '/_authenticated/ride'
       path: '/ride'
@@ -374,6 +412,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedDriverRoute: typeof AuthenticatedDriverRouteWithChildren
+  AuthenticatedPlacesRoute: typeof AuthenticatedPlacesRoute
+  AuthenticatedPromosRoute: typeof AuthenticatedPromosRoute
   AuthenticatedRideRoute: typeof AuthenticatedRideRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
@@ -383,6 +423,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedDriverRoute: AuthenticatedDriverRouteWithChildren,
+  AuthenticatedPlacesRoute: AuthenticatedPlacesRoute,
+  AuthenticatedPromosRoute: AuthenticatedPromosRoute,
   AuthenticatedRideRoute: AuthenticatedRideRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }

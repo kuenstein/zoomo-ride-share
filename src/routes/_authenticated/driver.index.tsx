@@ -28,7 +28,7 @@ type Ride = Database["public"]["Tables"]["rides"]["Row"];
 
 const ACTIVE = ["accepted", "arriving", "in_progress"] as const;
 
-export const Route = createFileRoute("/_authenticated/driver")({
+export const Route = createFileRoute("/_authenticated/driver/")({
   head: () => ({
     meta: [
       { title: "Drive — Zoomo" },
