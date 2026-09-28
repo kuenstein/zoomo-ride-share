@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, GCash, Maya or cash.",
+          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
       },
       { property: "og:title", content: "Zoomo — Rides in Dumaguete, Padulong na ta!" },
       { property: "og:type", content: "website" },
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, GCash, Maya or cash.",
+          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
       },
     ],
   }),
@@ -36,7 +36,7 @@ const steps = [
 ];
 
 const perks = [
-  { icon: Wallet, title: "Cash, GCash, Maya or card", text: "Top up your Zoomo wallet in pesos and pay in one tap." },
+  { icon: Wallet, title: "Cash or QR Ph", text: "Top up your Zoomo wallet in pesos with QR Ph (GCash, Maya, any bank app) and pay in one tap." },
   { icon: ShieldCheck, title: "Verified drivers", text: "Every driver is reviewed and approved before going online." },
   { icon: Clock, title: "Fast matching", text: "Requests go to the closest online drivers within 5 km." },
 ];
