@@ -27,7 +27,7 @@ export const Route = createFileRoute("/")({
 
 const steps = [
   { icon: MapPin, title: "Set your pickup", text: "We find you automatically, or drop the pin yourself." },
-  { icon: Car, title: "Pick your ride", text: "Economy, Comfort, XL or Bike — fare shown upfront." },
+  { icon: Car, title: "Pick your ride", text: "Tricycle, Motorcycle, Economy, Comfort or XL — fare in pesos, shown upfront." },
   { icon: Star, title: "Track and rate", text: "Watch your driver arrive live, then rate the trip." },
 ];
 

@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/Brand";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -191,7 +191,7 @@ function AdminDashboard() {
               <div className="flex-1 overflow-hidden">
                 <p className="truncate text-sm font-medium">{r.dropoff_address}</p>
                 <p className="text-xs text-muted-foreground">
-                  {new Date(r.created_at).toLocaleString()} · {STATUS_LABEL[r.status]}
+                  {formatDateTime(r.created_at)} · {STATUS_LABEL[r.status]}
                 </p>
               </div>
               <div className="text-right text-sm">
@@ -304,6 +304,9 @@ type Pricing = {
   multiplier_comfort: number;
   multiplier_xl: number;
   multiplier_bike: number;
+  multiplier_tricycle: number;
+  airport_flat_fare: number;
+  airport_radius_km: number;
 };
 
 const FIELDS: { key: keyof Pricing; label: string }[] = [
@@ -315,7 +318,10 @@ const FIELDS: { key: keyof Pricing; label: string }[] = [
   { key: "multiplier_economy", label: "Economy ×" },
   { key: "multiplier_comfort", label: "Comfort ×" },
   { key: "multiplier_xl", label: "XL ×" },
-  { key: "multiplier_bike", label: "Bike ×" },
+  { key: "multiplier_tricycle", label: "Tricycle ×" },
+  { key: "multiplier_bike", label: "Motorcycle (habal-habal) ×" },
+  { key: "airport_flat_fare", label: "Airport flat fare (₱)" },
+  { key: "airport_radius_km", label: "Airport zone radius (km)" },
 ];
 
 function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => void }) {

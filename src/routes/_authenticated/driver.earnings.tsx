@@ -71,7 +71,7 @@ function EarningsPage() {
     const total = data.rides
       .filter((r) => r.completed_at && new Date(r.completed_at) >= d && new Date(r.completed_at) < next)
       .reduce((s, r) => s + Number(r.driver_earnings), 0);
-    return { day: d.toLocaleDateString(undefined, { weekday: "short" }), total: Math.round(total * 100) / 100 };
+    return { day: d.toLocaleDateString("en-PH", { weekday: "short", timeZone: "Asia/Manila" }), total: Math.round(total * 100) / 100 };
   });
 
   return (

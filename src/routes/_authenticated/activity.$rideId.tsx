@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Map } from "@/components/Map";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/activity/$rideId")({
@@ -82,7 +82,7 @@ function TripDetail() {
 
       <h1 className="mt-4 text-2xl font-bold">{formatMoney(gross)}</h1>
       <p className="text-sm text-muted-foreground">
-        {STATUS_LABEL[ride.status]} · {new Date(ride.created_at).toLocaleString()}
+        {STATUS_LABEL[ride.status]} · {formatDateTime(ride.created_at)}
       </p>
 
       <div className="mt-4 space-y-1 rounded-2xl bg-secondary p-3 text-sm">
