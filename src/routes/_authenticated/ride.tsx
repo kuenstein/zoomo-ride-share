@@ -645,7 +645,7 @@ function RidePage() {
                     </div>
                     <label className="flex items-center justify-between text-sm">
                       <span className="font-medium">Extra baggage <span className="text-muted-foreground">(+{formatMoney(Number(pricing.baggage_fee), { whole: true })})</span></span>
-                      <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--accent))]" checked={baggage} onChange={(e) => { setBaggage(e.target.checked); setPromoInfo(null); }} />
+                      <input type="checkbox" className="h-4 w-4 accent-accent" checked={baggage} onChange={(e) => { setBaggage(e.target.checked); setPromoInfo(null); }} />
                     </label>
                     <p className="text-xs text-muted-foreground">
                       +{formatMoney(Number(pricing.extra_passenger_fee), { whole: true })} per passenger after the first.
