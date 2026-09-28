@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Map } from "@/components/Map";
 import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL, vehicleLabel, isSupportedType, fareBreakdown } from "@/lib/pricing";
+import { ReportProblem } from "@/components/ReportProblem";
 
 export const Route = createFileRoute("/_authenticated/activity/$rideId")({
   head: () => ({
@@ -138,6 +139,10 @@ function TripDetail() {
         <Row label="Total" value={formatMoney(gross)} strong />
         <Row label="Payment" value={ride.payment_method} />
       </div>
+
+      {ride.status === "completed" && ride.rider_id && (
+        <ReportProblem rideId={ride.id} userId={ride.rider_id} className="mt-4 w-full" />
+      )}
 
       <Button asChild className="mt-4 h-12 w-full">
         <Link
