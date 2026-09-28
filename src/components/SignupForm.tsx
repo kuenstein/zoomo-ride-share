@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-export function SignupForm({ role }: { role: "rider" | "driver" }) {
+export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redirect?: string }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,7 +21,7 @@ export function SignupForm({ role }: { role: "rider" | "driver" }) {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState(false);
   const isDriver = role === "driver";
-  const home = isDriver ? "/driver" : "/ride";
+  const home = isDriver ? "/driver" : (redirect ?? "/ride");
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +44,7 @@ export function SignupForm({ role }: { role: "rider" | "driver" }) {
         toast.success("Check your email to confirm your account.");
       } else {
         toast.success(isDriver ? "Welcome! Let's set up your vehicle." : "Welcome to Zoomo!");
-        navigate({ to: home });
+        navigate({ href: home });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
@@ -55,14 +55,14 @@ export function SignupForm({ role }: { role: "rider" | "driver" }) {
 
   const google = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth?redirect=${encodeURIComponent(home)}` });
     if (result.error) {
       setBusy(false);
       toast.error("Google sign-in failed. Try again.");
       return;
     }
     if (result.redirected) return;
-    navigate({ to: home });
+    navigate({ href: home });
   };
 
   return (
@@ -144,7 +144,7 @@ export function SignupForm({ role }: { role: "rider" | "driver" }) {
             )}
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/auth" className="font-semibold text-accent">
+              <Link to="/auth" search={{ redirect }} className="font-semibold text-accent">
                 Sign in
               </Link>
             </p>
