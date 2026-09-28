@@ -12,7 +12,8 @@ export const getLaunchChecklist = createServerFn({ method: "GET" })
     if (!isAdmin) throw new Error("Forbidden");
     const { data: s, error } = await context.supabase.rpc("launch_db_status");
     if (error) throw new Error(error.message);
-    const db = (s ?? {}) as Record<string, any>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const db = (s ?? {}) as any;
     const has = (k: string) => !!process.env[k]?.trim();
     const { geocoderName, routerName } = await import("./geo-providers.server");
     const geo = geocoderName();

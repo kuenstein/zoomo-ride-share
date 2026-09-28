@@ -19,7 +19,7 @@ export function ConsentGate() {
     setBusy(true);
     const { error } = await supabase.rpc("accept_terms", { _version: CONSENT_VERSION });
     setBusy(false);
-    if (error) return toast.error("Couldn't save — try again");
+    if (error) return void toast.error("Couldn't save — try again");
     await refresh();
     toast.success("Thanks!");
   };
