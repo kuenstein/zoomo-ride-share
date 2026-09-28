@@ -115,7 +115,7 @@ function WalletPage() {
       </div>
 
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-semibold">Pay with (simulated)</p>
+        <p className="text-sm font-semibold">Pay with</p>
         <div className="grid grid-cols-2 gap-2">
           {METHODS.map((m) => (
             <Button key={m.id} size="sm" variant={method === m.id ? "default" : "outline"} onClick={() => setMethod(m.id)}>
