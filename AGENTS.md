@@ -13,3 +13,5 @@
 - Ride money logic (accept, complete, promo, wallet) lives in Postgres security-definer functions called via RPC — clients must never compute or write fares.
 - Roles live in `user_roles` and are checked with `has_role()`; never store roles on `profiles`.
 - Map rendering goes through `src/components/Map.tsx` (client-only lazy wrapper) — never import Leaflet in an SSR path.
+- Wallet top-ups go through PayMongo checkout (`src/lib/payments.functions.ts`); the wallet is credited only by the signature-verified webhook `/api/public/paymongo-webhook` via `credit_paid_checkout` (service role) — never from the client.
+- AI Gateway calls live in `src/lib/ai-gateway.server.ts` (streamed Responses, `system` option for instructions) — keeps the key server-side.

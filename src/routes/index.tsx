@@ -51,7 +51,7 @@ function Landing() {
               <Link to="/auth">Sign in</Link>
             </Button>
             <Button asChild size="sm">
-              <Link to="/auth">Get started</Link>
+              <Link to="/signup/rider">Get started</Link>
             </Button>
           </div>
         </div>
@@ -81,10 +81,10 @@ function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link to="/auth">Book a ride</Link>
+              <Link to="/signup/rider">Book a ride</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/auth">Become a driver</Link>
+              <Link to="/signup/driver">Become a driver</Link>
             </Button>
           </div>
         </div>
@@ -150,7 +150,7 @@ function Landing() {
             in your wallet the moment a trip ends.
           </p>
           <Button asChild size="lg" className="mt-6">
-            <Link to="/auth">Start driving</Link>
+            <Link to="/signup/driver">Start driving</Link>
           </Button>
         </div>
       </section>

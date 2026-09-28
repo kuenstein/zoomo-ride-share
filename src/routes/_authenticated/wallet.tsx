@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowDownLeft, ArrowUpRight, Loader2 } from "lucide-react";
@@ -10,21 +11,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/Brand";
 import { formatMoney, formatDateTime } from "@/lib/geo";
 import { Input } from "@/components/ui/input";
+import { createTopupCheckout } from "@/lib/payments.functions";
 
 const METHODS = [
   { id: "gcash", label: "GCash" },
   { id: "maya", label: "Maya" },
-  { id: "card", label: "Card" },
-  { id: "cash", label: "Cash (at partner outlet)" },
 ] as const;
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
       { title: "Wallet — Zoomo" },
-      { name: "description", content: "Top up your Zoomo wallet and review every transaction." },
+      { name: "description", content: "Top up your Zoomo wallet with GCash or Maya and review every transaction." },
       { property: "og:title", content: "Wallet — Zoomo" },
-      { property: "og:description", content: "Top up your Zoomo wallet and review every transaction." },
+      { property: "og:description", content: "Top up your Zoomo wallet with GCash or Maya and review every transaction." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: WalletPage,
@@ -33,9 +35,29 @@ export const Route = createFileRoute("/_authenticated/wallet")({
 function WalletPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const checkout = useServerFn(createTopupCheckout);
   const [busy, setBusy] = useState(false);
   const [method, setMethod] = useState<(typeof METHODS)[number]["id"]>("gcash");
   const [custom, setCustom] = useState("");
+
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search).get("topup");
+    if (p === "success") toast.success("Payment received — your balance updates in a few seconds.");
+    if (p === "cancelled") toast.message("Top-up cancelled.");
+    if (p) window.history.replaceState(null, "", "/wallet");
+    if (p === "success") {
+      const t = setInterval(() => {
+        void qc.invalidateQueries({ queryKey: ["wallet"] });
+        void qc.invalidateQueries({ queryKey: ["wallet-txns"] });
+      }, 3000);
+      const stop = setTimeout(() => clearInterval(t), 30000);
+      return () => {
+        clearInterval(t);
+        clearTimeout(stop);
+      };
+    }
+    return undefined;
+  }, [qc]);
 
   const { data: wallet, isLoading } = useQuery({
     queryKey: ["wallet", user?.id],
@@ -60,18 +82,23 @@ function WalletPage() {
   });
 
   const topUp = async (amount: number) => {
-    setBusy(true);
-    const { data, error } = await supabase.rpc("wallet_topup", { _amount: amount });
-    setBusy(false);
-    const res = data as unknown as { success: boolean; message?: string; balance?: number } | null;
-    if (error || !res?.success) {
-      toast.error(res?.message ?? "Top-up failed");
+    if (!Number.isFinite(amount) || amount < 50 || amount > 10000) {
+      toast.error("Enter an amount from ₱50 to ₱10,000");
       return;
     }
-    toast.success(`Added ${formatMoney(amount)} via ${METHODS.find((m) => m.id === method)?.label} (simulated)`);
-    setCustom("");
-    void qc.invalidateQueries({ queryKey: ["wallet"] });
-    void qc.invalidateQueries({ queryKey: ["wallet-txns"] });
+    setBusy(true);
+    try {
+      const res = await checkout({ data: { amount, method, origin: window.location.origin } });
+      if (!res.ok) {
+        toast.error(res.error);
+        setBusy(false);
+        return;
+      }
+      window.location.href = res.url;
+    } catch {
+      toast.error("Could not start payment");
+      setBusy(false);
+    }
   };
 
   return (
@@ -89,7 +116,7 @@ function WalletPage() {
       </div>
 
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-semibold">Pay with (simulated)</p>
+        <p className="text-sm font-semibold">Pay with</p>
         <div className="grid grid-cols-2 gap-2">
           {METHODS.map((m) => (
             <Button key={m.id} size="sm" variant={method === m.id ? "default" : "outline"} onClick={() => setMethod(m.id)}>

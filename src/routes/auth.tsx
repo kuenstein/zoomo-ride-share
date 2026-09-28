@@ -181,15 +181,17 @@ function AuthPage() {
               Continue with Google
             </Button>
 
-            <p className="mt-6 text-center text-sm text-muted-foreground">
-              {mode === "signin" ? "New to Zoomo?" : "Already have an account?"}{" "}
-              <button
-                className="font-semibold text-accent"
-                onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-              >
-                {mode === "signin" ? "Create account" : "Sign in"}
-              </button>
-            </p>
+            <div className="mt-6 space-y-2 text-center text-sm text-muted-foreground">
+              <p>New to Zoomo?</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Button asChild variant="outline">
+                  <Link to="/signup/rider">Sign up to ride</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link to="/signup/driver">Sign up to drive</Link>
+                </Button>
+              </div>
+            </div>
           </>
         )}
       </main>

@@ -104,6 +104,42 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_checkouts: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          method: string
+          paid_at: string | null
+          provider_session_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          method: string
+          paid_at?: string | null
+          provider_session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          method?: string
+          paid_at?: string | null
+          provider_session_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       pricing_settings: {
         Row: {
           airport_flat_fare: number
@@ -602,6 +638,7 @@ export type Database = {
         Args: { _ride_id: string; _tip?: number }
         Returns: Json
       }
+      credit_paid_checkout: { Args: { _session_id: string }; Returns: Json }
       expire_stale_rides: { Args: never; Returns: number }
       has_role: {
         Args: {
