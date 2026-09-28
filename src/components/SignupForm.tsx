@@ -12,7 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redirect?: string }) {
+export function SignupForm({ role, redirect }: { role: "rider" | "driver"; redirect?: string | undefined }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
