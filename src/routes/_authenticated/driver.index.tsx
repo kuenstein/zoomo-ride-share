@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { setStoredMode } from "@/lib/nav";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Clock, Loader2, MessageSquare, Navigation, TrendingUp } from "lucide-react";
@@ -28,7 +29,7 @@ type Ride = Database["public"]["Tables"]["rides"]["Row"];
 
 const ACTIVE = ["accepted", "arriving", "in_progress"] as const;
 
-export const Route = createFileRoute("/_authenticated/driver")({
+export const Route = createFileRoute("/_authenticated/driver/")({
   head: () => ({
     meta: [
       { title: "Drive — Zoomo" },
@@ -66,14 +67,20 @@ function DriverPage() {
 }
 
 function StatusScreen({ title, text }: { title: string; text: string }) {
+  const navigate = useNavigate();
   return (
     <div className="mx-auto flex max-w-lg flex-col items-center justify-center px-6 py-24 text-center">
       <Clock className="h-10 w-10 text-accent" />
       <h1 className="mt-4 text-2xl font-bold">{title}</h1>
       <p className="mt-2 text-sm text-muted-foreground">{text}</p>
-      <Button asChild variant="outline" className="mt-6">
-        <Link to="/ride">Book a ride instead</Link>
-      </Button>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <Button asChild variant="outline">
+          <Link to="/account">Go to account</Link>
+        </Button>
+        <Button onClick={() => { setStoredMode("rider"); void navigate({ to: "/ride" }); }}>
+          Switch to rider mode
+        </Button>
+      </div>
     </div>
   );
 }
@@ -472,6 +479,9 @@ function DriverHome() {
                 </Link>
               </Button>
             </div>
+            <Button asChild variant="ghost" className="w-full">
+              <Link to="/driver/trips">View trip history</Link>
+            </Button>
             <p className="text-center text-sm text-muted-foreground">
               {online
                 ? "You're online. New requests within 5 km will pop up here."

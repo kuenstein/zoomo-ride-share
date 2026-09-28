@@ -4,6 +4,8 @@ import heroImg from "@/assets/hero.jpg";
 import { Logo } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuth } from "@/hooks/useAuth";
+import { homeForRoles } from "@/lib/nav";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -40,19 +42,31 @@ const perks = [
 ];
 
 function Landing() {
+  const { user, roles, isAdmin } = useAuth();
+  const appHome = homeForRoles(roles);
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Logo className="text-lg" />
+          <Link to="/" aria-label="Zoomo home">
+            <Logo className="text-lg" />
+          </Link>
           <div className="flex items-center gap-1">
             <ThemeToggle />
-            <Button asChild size="sm" variant="ghost">
-              <Link to="/auth">Sign in</Link>
-            </Button>
-            <Button asChild size="sm">
-              <Link to="/signup/rider">Get started</Link>
-            </Button>
+            {user ? (
+              <Button asChild size="sm">
+                <Link to={appHome}>Open Zoomo</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild size="sm" variant="ghost">
+                  <Link to="/auth">Sign in</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link to="/signup/rider">Get started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -81,17 +95,18 @@ function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Button asChild size="lg">
-              <Link to="/signup/rider">Book a ride</Link>
+              {/* Signed-out users are sent to sign in and returned to booking afterwards */}
+              <Link to="/ride">Book a ride</Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <Link to="/signup/driver">Become a driver</Link>
+              {user ? <Link to="/driver">Drive with Zoomo</Link> : <Link to="/signup/driver">Become a driver</Link>}
             </Button>
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-5xl px-4 py-16">
-        <h2 className="text-3xl font-bold">How it works</h2>
+        <h2 id="how-it-works" className="scroll-mt-20 text-3xl font-bold">How it works</h2>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {steps.map(({ icon: Icon, title, text }, i) => (
             <div key={title} className="rounded-2xl border border-border bg-card p-6">
@@ -119,7 +134,7 @@ function Landing() {
       </section>
 
       <section className="mx-auto max-w-5xl px-4 pb-16">
-        <h2 className="text-3xl font-bold">Where we ride</h2>
+        <h2 id="about" className="scroll-mt-20 text-3xl font-bold">Where we ride</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           Asa ka padulong? Zoomo currently covers these towns in Negros Oriental — more soon.
         </p>
@@ -159,9 +174,17 @@ function Landing() {
         <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-8 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <Logo className="text-base text-foreground" />
           <p>© {new Date().getFullYear()} Zoomo. Proudly from Dumaguete, Negros Oriental.</p>
-          <Link to="/auth" className="font-medium text-accent">
-            Sign in
-          </Link>
+          <nav aria-label="Footer" className="flex flex-wrap gap-4">
+            <Link to="/" hash="about" className="hover:text-foreground">About</Link>
+            <Link to="/" hash="how-it-works" className="hover:text-foreground">How it works</Link>
+            <Link to="/signup/driver" className="hover:text-foreground">Become a driver</Link>
+            {user ? (
+              <Link to={appHome} className="font-medium text-accent">Open app</Link>
+            ) : (
+              <Link to="/auth" className="font-medium text-accent">Sign in</Link>
+            )}
+            {isAdmin && <Link to="/admin" className="hover:text-foreground">Admin</Link>}
+          </nav>
         </div>
       </footer>
     </div>

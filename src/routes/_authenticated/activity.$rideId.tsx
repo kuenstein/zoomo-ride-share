@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,6 +31,8 @@ function Row({ label, value, strong }: { label: string; value: string; strong?: 
 
 function TripDetail() {
   const { rideId } = Route.useParams();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
   const { data: ride, isLoading } = useQuery({
     queryKey: ["ride", rideId],
     queryFn: async () => {
@@ -64,9 +66,23 @@ function TripDetail() {
 
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
-      <Link to="/activity" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <ArrowLeft className="h-4 w-4" /> Trips
-      </Link>
+      <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Link
+          to="/activity"
+          onClick={(e) => {
+            // Prefer real history so filters/scroll are kept
+            if (canGoBack) {
+              e.preventDefault();
+              router.history.back();
+            }
+          }}
+          className="inline-flex items-center gap-1"
+        >
+          <ArrowLeft className="h-4 w-4" /> Activity
+        </Link>
+        <span>/</span>
+        <span className="text-foreground">Trip details</span>
+      </nav>
 
       <div className="mt-3 h-48 overflow-hidden rounded-2xl border border-border">
         <Map
@@ -108,6 +124,22 @@ function TripDetail() {
         <Row label="Total" value={formatMoney(gross)} strong />
         <Row label="Payment" value={ride.payment_method} />
       </div>
+
+      <Button asChild className="mt-4 h-12 w-full">
+        <Link
+          to="/ride"
+          search={{
+            pLat: ride.pickup_lat,
+            pLng: ride.pickup_lng,
+            pAddr: ride.pickup_address,
+            dLat: ride.dropoff_lat,
+            dLng: ride.dropoff_lng,
+            dAddr: ride.dropoff_address,
+          }}
+        >
+          <RotateCcw className="mr-2 h-4 w-4" /> Book again
+        </Link>
+      </Button>
     </div>
   );
 }

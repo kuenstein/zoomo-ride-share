@@ -77,7 +77,7 @@ function EarningsPage() {
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
       <Link to="/driver" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
-        <ArrowLeft className="h-4 w-4" /> Drive
+        <ArrowLeft className="h-4 w-4" /> Dashboard
       </Link>
       <h1 className="mt-3 text-2xl font-bold">Earnings</h1>
 
@@ -94,7 +94,9 @@ function EarningsPage() {
         ))}
       </div>
 
-      <p className="mt-4 text-sm text-muted-foreground">{data.rides.length} completed trips</p>
+      <Link to="/driver/trips" className="mt-4 inline-block text-sm font-medium text-accent">
+        {data.rides.length} completed trips · View trip history
+      </Link>
 
       <div className="mt-3 h-56 rounded-2xl border border-border p-3">
         <ResponsiveContainer width="100%" height="100%">
