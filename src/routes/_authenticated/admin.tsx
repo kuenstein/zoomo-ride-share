@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
+import { PayoutsAdmin } from "@/components/PayoutsAdmin";
 import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL, vehicleLabel, isSupportedType, fareFromRates } from "@/lib/pricing";
 
