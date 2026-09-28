@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -46,7 +46,29 @@ type PaymentMethod = Database["public"]["Enums"]["payment_method"];
 
 const ACTIVE_STATUSES = ["requested", "accepted", "arriving", "in_progress"] as const;
 
+type RideSearch = {
+  pLat?: number;
+  pLng?: number;
+  pAddr?: string;
+  dLat?: number;
+  dLng?: number;
+  dAddr?: string;
+  promo?: string;
+};
+
+const num = (v: unknown) => (typeof v === "number" ? v : typeof v === "string" && v !== "" && !isNaN(+v) ? +v : undefined);
+const str = (v: unknown) => (typeof v === "string" && v ? v.slice(0, 300) : undefined);
+
 export const Route = createFileRoute("/_authenticated/ride")({
+  validateSearch: (s: Record<string, unknown>): RideSearch => ({
+    pLat: num(s.pLat),
+    pLng: num(s.pLng),
+    pAddr: str(s.pAddr),
+    dLat: num(s.dLat),
+    dLng: num(s.dLng),
+    dAddr: str(s.dAddr),
+    promo: str(s.promo)?.toUpperCase(),
+  }),
   head: () => ({
     meta: [
       { title: "Book a ride — Zoomo" },
@@ -139,12 +161,23 @@ function AddressField({
 
 function RidePage() {
   const { user, profile } = useAuth();
-  const [pickup, setPickup] = useState<Place | null>(null);
-  const [dropoff, setDropoff] = useState<Place | null>(null);
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const prefillPickup =
+    search.pLat != null && search.pLng != null
+      ? { lat: search.pLat, lng: search.pLng, address: search.pAddr ?? "Pickup" }
+      : null;
+  const [pickup, setPickup] = useState<Place | null>(prefillPickup);
+  const [dropoff, setDropoff] = useState<Place | null>(
+    search.dLat != null && search.dLng != null
+      ? { lat: search.dLat, lng: search.dLng, address: search.dAddr ?? "Destination" }
+      : null,
+  );
+  const [receiptId, setReceiptId] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [vehicle, setVehicle] = useState<VehicleType>("economy");
   const [payment, setPayment] = useState<PaymentMethod>("cash");
-  const [promo, setPromo] = useState("");
+  const [promo, setPromo] = useState(search.promo ?? "");
   const [promoInfo, setPromoInfo] = useState<{ valid: boolean; discount: number; message: string } | null>(null);
   const [requesting, setRequesting] = useState(false);
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
@@ -191,6 +224,10 @@ function RidePage() {
 
   // Initial geolocation
   useEffect(() => {
+    if (prefillPickup) {
+      setLocating(false);
+      return;
+    }
     void (async () => {
       try {
         const pos = await getCurrentPosition();
@@ -425,6 +462,19 @@ function RidePage() {
       </header>
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6 transition-all duration-300">
+        {receiptId && !activeRide && (
+          <div className="mb-4 rounded-2xl border border-accent/40 bg-accent/10 p-4">
+            <p className="font-semibold">Salamat! Thanks for riding with Zoomo.</p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => { setReceiptId(null); setDropoff(null); }}>
+                Back to home
+              </Button>
+              <Button asChild>
+                <Link to="/activity/$rideId" params={{ rideId: receiptId }}>View receipt</Link>
+              </Button>
+            </div>
+          </div>
+        )}
         {activeRide ? (
           <TrackingPanel
             ride={activeRide}
@@ -489,6 +539,18 @@ function RidePage() {
                 >
                   <LocateFixed className="mr-1 h-3.5 w-3.5" /> Current location
                 </Button>
+                {(savedPlaces ?? []).length === 0 && (
+                  <Button asChild size="sm" variant="secondary">
+                    <Link to="/places">
+                      <MapPin className="mr-1 h-3.5 w-3.5" /> Add Home / Work
+                    </Link>
+                  </Button>
+                )}
+                {(savedPlaces ?? []).length > 0 && (
+                  <Button asChild size="sm" variant="ghost">
+                    <Link to="/places">Edit places</Link>
+                  </Button>
+                )}
                 {(savedPlaces ?? []).map((sp) => (
                   <Button
                     key={sp.id}
@@ -563,6 +625,10 @@ function RidePage() {
                   })}
                 </div>
 
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-muted-foreground">Payment</span>
+                  <Link to="/wallet" className="font-medium text-accent">Top up wallet</Link>
+                </div>
                 <div className="flex gap-2">
                   {(["cash", "card", "wallet"] as PaymentMethod[]).map((pm) => (
                     <Button
@@ -622,7 +688,10 @@ function RidePage() {
           rateeId={finishedRide.driver_id ?? user.id}
           title={`Trip complete — ${formatMoney(finishedRide.final_fare)}`}
           allowTip
-          onDone={() => setFinishedRide(null)}
+          onDone={() => {
+            setReceiptId(finishedRide.id);
+            setFinishedRide(null);
+          }}
         />
       )}
     </div>
