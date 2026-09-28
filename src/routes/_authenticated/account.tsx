@@ -163,7 +163,7 @@ function AccountPage() {
             <MenuLink icon={MapPin} label="Saved places" hint="Home, Work and favourites">
               {(c) => <Link to="/places" className={rowCls}>{c}</Link>}
             </MenuLink>
-            <MenuLink icon={Wallet} label="Wallet" hint="Balance and GCash / Maya top-ups">
+            <MenuLink icon={Wallet} label="Wallet" hint="Balance and QR Ph top-ups">
               {(c) => <Link to="/wallet" className={rowCls}>{c}</Link>}
             </MenuLink>
             <MenuLink icon={Clock} label="Ride history" hint="Receipts and past trips">

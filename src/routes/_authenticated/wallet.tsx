@@ -13,18 +13,14 @@ import { formatMoney, formatDateTime } from "@/lib/geo";
 import { Input } from "@/components/ui/input";
 import { createTopupCheckout } from "@/lib/payments.functions";
 
-const METHODS = [
-  { id: "gcash", label: "GCash" },
-  { id: "maya", label: "Maya" },
-] as const;
 
 export const Route = createFileRoute("/_authenticated/wallet")({
   head: () => ({
     meta: [
       { title: "Wallet — Zoomo" },
-      { name: "description", content: "Top up your Zoomo wallet with GCash or Maya and review every transaction." },
+      { name: "description", content: "Top up your Zoomo wallet with QR Ph — scan with GCash, Maya or any bank app — and review every transaction." },
       { property: "og:title", content: "Wallet — Zoomo" },
-      { property: "og:description", content: "Top up your Zoomo wallet with GCash or Maya and review every transaction." },
+      { property: "og:description", content: "Top up your Zoomo wallet with QR Ph — scan with GCash, Maya or any bank app — and review every transaction." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -37,7 +33,6 @@ function WalletPage() {
   const qc = useQueryClient();
   const checkout = useServerFn(createTopupCheckout);
   const [busy, setBusy] = useState(false);
-  const [method, setMethod] = useState<(typeof METHODS)[number]["id"]>("gcash");
   const [custom, setCustom] = useState("");
 
   useEffect(() => {
@@ -88,7 +83,7 @@ function WalletPage() {
     }
     setBusy(true);
     try {
-      const res = await checkout({ data: { amount, method, origin: window.location.origin } });
+      const res = await checkout({ data: { amount, origin: window.location.origin } });
       if (!res.ok) {
         toast.error(res.error);
         setBusy(false);
@@ -124,14 +119,7 @@ function WalletPage() {
       </div>
 
       <div className="mt-4 space-y-3">
-        <p className="text-sm font-semibold">Pay with</p>
-        <div className="grid grid-cols-2 gap-2">
-          {METHODS.map((m) => (
-            <Button key={m.id} size="sm" variant={method === m.id ? "default" : "outline"} onClick={() => setMethod(m.id)}>
-              {m.label}
-            </Button>
-          ))}
-        </div>
+        <p className="text-sm text-muted-foreground">Pay with <span className="font-semibold text-foreground">QR Ph</span> — scan with GCash, Maya, or any bank or e-wallet app.</p>
         <p className="text-sm font-semibold">Top-up amount</p>
         <div className="grid grid-cols-4 gap-2">
           {[100, 200, 500, 1000].map((a) => (
