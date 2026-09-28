@@ -51,7 +51,7 @@ function Landing() {
               <Link to="/auth">Sign in</Link>
             </Button>
             <Button asChild size="sm">
-              <Link to="/auth">Get started</Link>
+              <Link to="/signup/rider">Get started</Link>
             </Button>
           </div>
         </div>
