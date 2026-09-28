@@ -206,7 +206,7 @@ function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
 }
 
 function DriverHome() {
-  const { user, driver, refresh } = useAuth();
+  const { user, driver, refresh, profile } = useAuth();
   const [online, setOnline] = useState(driver?.is_online ?? false);
   const [pos, setPos] = useState<LatLng | null>(null);
   const [incoming, setIncoming] = useState<Ride | null>(null);
@@ -262,11 +262,19 @@ function DriverHome() {
   }, [user, online]);
 
   useWakeLock(online);
+  useEffect(() => {
+    if (incoming?.id) playRequestAlert();
+  }, [incoming?.id]);
+  const licenseExpired = !!driver?.license_expiry && driver.license_expiry < new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
   useTitleFlash(!!incoming);
 
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
     if (next) unlockAudio();
+    if (next && licenseExpired) {
+      toast.error("Your driver's license has expired");
+      return;
+    }
     if (next && !vehicleOk) {
       toast.error("Update your vehicle type to Tricycle or Motorcycle first");
       return;
@@ -330,10 +338,7 @@ function DriverHome() {
         const r = payload.new as Ride;
         if (r.status !== "requested" || declined.current.has(r.id)) return;
         if (pos && haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) > 5) return;
-        setIncoming((cur) => {
-          if (!cur) playRequestAlert();
-          return cur ?? r;
-        });
+        setIncoming((cur) => cur ?? r);
         setCountdown(20);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides" }, (payload) => {
@@ -488,6 +493,12 @@ function DriverHome() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {licenseExpired && (
+          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold">Your driver's license has expired</p>
+            <p className="text-muted-foreground">You can't go online until an admin records your renewed license. Contact Zoomo support with your new license.</p>
+          </div>
+        )}
         {!vehicleOk && (
           <div className="mb-3 space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
             <p className="font-semibold">Your vehicle type is no longer supported</p>
