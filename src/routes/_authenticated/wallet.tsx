@@ -94,7 +94,15 @@ function WalletPage() {
         setBusy(false);
         return;
       }
-      window.location.href = res.url;
+      // PayMongo checkout refuses to load inside an iframe (the preview pane),
+      // so always open it in a full browser tab.
+      const win = window.open(res.url, "_blank", "noopener,noreferrer");
+      if (!win) {
+        toast.error("Your browser blocked the payment tab — please allow pop-ups and try again.");
+      } else {
+        toast.success("Payment tab opened — your wallet updates automatically once you pay.");
+      }
+      setBusy(false);
     } catch {
       toast.error("Could not start payment");
       setBusy(false);
