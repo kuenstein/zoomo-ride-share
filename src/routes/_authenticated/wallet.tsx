@@ -56,6 +56,7 @@ function WalletPage() {
         clearTimeout(stop);
       };
     }
+    return undefined;
   }, [qc]);
 
   const { data: wallet, isLoading } = useQuery({
