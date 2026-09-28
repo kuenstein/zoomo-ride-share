@@ -35,7 +35,7 @@ import {
   type Place,
   type RouteResult,
 } from "@/lib/geo";
-import { VEHICLE_OPTIONS, VEHICLE_LABEL, vehicleLabel, estimateFare, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { VEHICLE_OPTIONS, VEHICLE_LABEL, vehicleLabel, estimateFare, extrasFee, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
 import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
 import { haversineKm } from "@/lib/geo";
 import { TripAssistant } from "@/components/TripAssistant";
@@ -179,6 +179,9 @@ function RidePage() {
   const [promo, setPromo] = useState(search.promo ?? "");
   const [promoInfo, setPromoInfo] = useState<{ valid: boolean; discount: number; message: string } | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const [passengers, setPassengers] = useState(1);
+  const [baggage, setBaggage] = useState(false);
+  const [offer, setOffer] = useState("");
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
   const [driverPos, setDriverPos] = useState<LatLng | null>(null);
   const [showChat, setShowChat] = useState(false);
@@ -363,10 +366,13 @@ function RidePage() {
     return () => clearInterval(t);
   }, [activeRide?.status]);
 
-  const baseFare = useMemo(() => {
+  const calculatedFare = useMemo(() => {
     if (!pricing || !route) return null;
-    return estimateFare(pricing, vehicle, route.distanceKm, airport);
-  }, [pricing, route, vehicle, airport]);
+    return estimateFare(pricing, vehicle, route.distanceKm, airport) + extrasFee(pricing, vehicle, passengers, baggage);
+  }, [pricing, route, vehicle, airport, passengers, baggage]);
+  const offerNum = Math.round(Number(offer));
+  const offerValid = calculatedFare != null && offer !== "" && Number.isFinite(offerNum) && offerNum > calculatedFare && offerNum <= calculatedFare + 1000;
+  const baseFare = calculatedFare == null ? null : offerValid ? offerNum : calculatedFare;
 
   const applyPromo = async () => {
     if (!promo.trim() || !baseFare) return;
@@ -406,6 +412,9 @@ function RidePage() {
         duration_min: route.durationMin,
         payment_method: payment,
         promo_code: promoInfo?.valid ? promo.trim().toUpperCase() : null,
+        passengers: vehicle === "tricycle" ? passengers : 1,
+        extra_baggage: vehicle === "tricycle" ? baggage : false,
+        fare_offer: offerValid ? offerNum : null,
       })
       .select()
       .single();
@@ -622,6 +631,43 @@ function RidePage() {
                       </button>
                     );
                   })}
+                </div>
+
+                {vehicle === "tricycle" && (
+                  <div className="space-y-2 rounded-2xl border border-border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium">Passengers</span>
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" onClick={() => { setPassengers((n) => Math.max(1, n - 1)); setPromoInfo(null); }} disabled={passengers <= 1} aria-label="Fewer passengers">−</Button>
+                        <span className="w-4 text-center text-sm font-semibold">{passengers}</span>
+                        <Button size="sm" variant="outline" onClick={() => { setPassengers((n) => Math.min(4, n + 1)); setPromoInfo(null); }} disabled={passengers >= 4} aria-label="More passengers">+</Button>
+                      </div>
+                    </div>
+                    <label className="flex items-center justify-between text-sm">
+                      <span className="font-medium">Extra baggage <span className="text-muted-foreground">(+{formatMoney(Number(pricing.baggage_fee), { whole: true })})</span></span>
+                      <input type="checkbox" className="h-4 w-4 accent-[hsl(var(--accent))]" checked={baggage} onChange={(e) => { setBaggage(e.target.checked); setPromoInfo(null); }} />
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      +{formatMoney(Number(pricing.extra_passenger_fee), { whole: true })} per passenger after the first.
+                    </p>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label htmlFor="fare-offer" className="text-xs font-semibold text-muted-foreground">
+                    Offer a higher fare (optional) — gets a driver faster
+                  </label>
+                  <Input
+                    id="fare-offer"
+                    type="number"
+                    inputMode="numeric"
+                    placeholder={calculatedFare != null ? `More than ${formatMoney(calculatedFare, { whole: true })}` : "Your offer"}
+                    value={offer}
+                    onChange={(e) => { setOffer(e.target.value); setPromoInfo(null); }}
+                  />
+                  {offer !== "" && !offerValid && (
+                    <p className="text-xs text-destructive">Offer must be higher than {formatMoney(calculatedFare, { whole: true })} (up to ₱1,000 more).</p>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between text-xs">
