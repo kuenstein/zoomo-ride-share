@@ -4,7 +4,7 @@ import type { MapViewProps } from "./MapView";
 
 const MapView = lazy(() => import("./MapView"));
 
-function MapSkeleton({ className }: { className?: string }) {
+function MapSkeleton({ className }: { className?: string | undefined }) {
   return (
     <div className={`${className ?? "h-full w-full"} animate-pulse bg-muted`} />
   );
