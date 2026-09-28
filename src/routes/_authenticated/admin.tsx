@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { formatMoney, formatDateTime } from "@/lib/geo";
-import { STATUS_LABEL } from "@/lib/pricing";
+import { STATUS_LABEL, vehicleLabel, isSupportedType } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({

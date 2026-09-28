@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Map } from "@/components/Map";
 import { formatMoney, formatDateTime } from "@/lib/geo";
-import { STATUS_LABEL } from "@/lib/pricing";
+import { STATUS_LABEL, vehicleLabel, isSupportedType } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/activity/$rideId")({
   head: () => ({

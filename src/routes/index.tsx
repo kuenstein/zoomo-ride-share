@@ -90,7 +90,7 @@ function Landing() {
             <span className="text-accent">one tap away.</span>
           </h1>
           <p className="mt-5 max-w-md text-base text-muted-foreground">
-            Tricycle, habal-habal, car or multicab — booked in seconds with upfront peso fares and
+            Tricycle or habal-habal — booked in seconds with upfront peso fares and
             live tracking. Serving Dumaguete City, Bacong, Sibulan and Valencia. Tara, sakay na!
           </p>
           <div className="mt-8 flex flex-wrap gap-3">

@@ -22,7 +22,7 @@ import {
   haversineKm,
   type LatLng,
 } from "@/lib/geo";
-import { DRIVER_VEHICLES, VEHICLE_OPTIONS, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { DRIVER_VEHICLES, VEHICLE_OPTIONS, STATUS_LABEL, isSupportedType, type VehicleType } from "@/lib/pricing";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -190,6 +190,20 @@ function DriverHome() {
   const [busy, setBusy] = useState(false);
   const [rateRide, setRateRide] = useState<Ride | null>(null);
   const declined = useRef<Set<string>>(new Set());
+  const [vehicle, setVehicle] = useState<{ id: string; type: VehicleType } | null>(null);
+  useEffect(() => {
+    if (!driver) return;
+    void supabase.from("vehicles").select("id,type").eq("driver_id", driver.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setVehicle(data));
+  }, [driver]);
+  const vehicleOk = !vehicle || isSupportedType(vehicle.type);
+  const fixVehicle = async (t: VehicleType) => {
+    if (!vehicle) return;
+    const { error } = await supabase.from("vehicles").update({ type: t }).eq("id", vehicle.id);
+    if (error) return toast.error(error.message);
+    setVehicle({ ...vehicle, type: t });
+    toast.success("Vehicle type updated — you can go online now");
+  };
 
   // Location broadcasting
   useEffect(() => {
@@ -220,6 +234,10 @@ function DriverHome() {
 
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
+    if (next && !vehicleOk) {
+      toast.error("Update your vehicle type to Tricycle or Motorcycle first");
+      return;
+    }
     setOnline(next);
     await supabase.from("drivers").update({ is_online: next }).eq("user_id", user.id);
     await supabase
