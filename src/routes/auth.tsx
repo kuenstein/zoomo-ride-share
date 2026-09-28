@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Logo } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Loader2, Car, Steering } from "lucide-react";
+import { Loader2, Car, CarTaxiFront } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -148,7 +148,7 @@ function AuthPage() {
                             role === r ? "border-accent bg-accent/10 text-foreground" : "border-border text-muted-foreground"
                           }`}
                         >
-                          {r === "rider" ? <Car className="h-4 w-4" /> : <Steering className="h-4 w-4" />}
+                          {r === "rider" ? <Car className="h-4 w-4" /> : <CarTaxiFront className="h-4 w-4" />}
                           {r === "rider" ? "Ride" : "Drive"}
                         </button>
                       ))}
