@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState , useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -179,6 +179,7 @@ function RidePage() {
   const [promo, setPromo] = useState(search.promo ?? "");
   const [promoInfo, setPromoInfo] = useState<{ valid: boolean; discount: number; message: string } | null>(null);
   const [requesting, setRequesting] = useState(false);
+  const retryRef = useRef<(() => void) | null>(null);
   const [passengers, setPassengers] = useState(1);
   const [baggage, setBaggage] = useState(false);
   const [offer, setOffer] = useState("");
@@ -429,6 +430,8 @@ function RidePage() {
     setActiveRide(data);
     toast.success("Looking for a nearby driver…");
   };
+
+  retryRef.current = () => void requestRide();
 
   const cancelRide = async () => {
     if (!activeRide) return;
