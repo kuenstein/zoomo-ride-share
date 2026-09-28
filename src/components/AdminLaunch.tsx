@@ -31,13 +31,13 @@ export function DriverDocsReview({ userId, licenseExpiry, driverId }: { userId: 
       if (!notes) return;
     }
     const { error } = await supabase.from("driver_documents").update({ status, reviewer_notes: notes }).eq("id", doc.id);
-    if (error) return toast.error("Couldn't update document");
+    if (error) return void toast.error("Couldn't update document");
     toast.success(`Document ${status}`);
     void qc.invalidateQueries({ queryKey: ["admin-docs", userId] });
   };
   const saveExpiry = async () => {
     const { error } = await supabase.from("drivers").update({ license_expiry: expiry || null }).eq("id", driverId);
-    if (error) return toast.error("Couldn't save expiry");
+    if (error) return void toast.error("Couldn't save expiry");
     toast.success("License expiry saved");
     void qc.invalidateQueries({ queryKey: ["admin-drivers"] });
   };
@@ -134,7 +134,7 @@ export function SafetyAdmin() {
       .from("safety_incidents")
       .update({ ...patch, ...(patch.status === "resolved" ? { resolved_at: new Date().toISOString() } : {}) })
       .eq("id", id);
-    if (error) return toast.error("Couldn't update incident");
+    if (error) return void toast.error("Couldn't update incident");
     toast.success("Incident updated");
     void qc.invalidateQueries({ queryKey: ["admin-incidents"] });
     void qc.invalidateQueries({ queryKey: ["open-incidents-count"] });
@@ -233,7 +233,7 @@ export function ReportsAdmin() {
   const resolve = async (id: string) => {
     const notes = window.prompt("Resolution notes (internal)") ?? "";
     const { error } = await supabase.from("reports").update({ status: "resolved", admin_notes: notes || null }).eq("id", id);
-    if (error) return toast.error("Couldn't update report");
+    if (error) return void toast.error("Couldn't update report");
     toast.success("Report resolved");
     void qc.invalidateQueries({ queryKey: ["admin-reports"] });
   };

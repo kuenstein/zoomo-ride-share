@@ -25,7 +25,7 @@ export function ReportProblem({ rideId, userId, className }: { rideId: string; u
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
-    if (!details.trim()) return toast.error("Tell us what happened");
+    if (!details.trim()) return void toast.error("Tell us what happened");
     setBusy(true);
     const { error } = await supabase.from("reports").insert({
       ride_id: rideId,
@@ -34,7 +34,7 @@ export function ReportProblem({ rideId, userId, className }: { rideId: string; u
       details: details.trim().slice(0, 2000),
     });
     setBusy(false);
-    if (error) return toast.error("Couldn't send your report");
+    if (error) return void toast.error("Couldn't send your report");
     toast.success("Report sent — our team will follow up");
     setOpen(false);
     setDetails("");

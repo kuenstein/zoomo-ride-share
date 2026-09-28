@@ -103,9 +103,9 @@ export function TrustedContacts({ userId }: { userId: string }) {
   });
   const add = async () => {
     const p = normalizePhMobile(phone);
-    if (!name.trim() || !p) return toast.error("Enter a name and a valid PH mobile number");
+    if (!name.trim() || !p) return void toast.error("Enter a name and a valid PH mobile number");
     const { error } = await supabase.from("trusted_contacts").insert({ user_id: userId, name: name.trim().slice(0, 80), phone: p });
-    if (error) return toast.error("Couldn't save contact");
+    if (error) return void toast.error("Couldn't save contact");
     setName("");
     setPhone("");
     toast.success("Trusted contact saved");

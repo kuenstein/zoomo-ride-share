@@ -15,9 +15,9 @@ import {
 
 export type SosTripInfo = {
   rideId: string;
-  driverName?: string | null;
-  plate?: string | null;
-  vehicle?: string | null;
+  driverName?: string | null | undefined;
+  plate?: string | null | undefined;
+  vehicle?: string | null | undefined;
   pickup: string;
   dropoff: string;
 };
@@ -68,7 +68,7 @@ export function SosButton({ trip }: { trip: SosTripInfo }) {
       /* location optional */
     }
     setPos(p);
-    const { data, error } = await supabase.rpc("raise_sos", { _ride_id: trip.rideId, _lat: p?.lat, _lng: p?.lng });
+    const { data, error } = await supabase.rpc("raise_sos", p ? { _ride_id: trip.rideId, _lat: p.lat, _lng: p.lng } : { _ride_id: trip.rideId });
     setBusy(false);
     const res = data as { success: boolean; message?: string } | null;
     if (error || !res?.success) {

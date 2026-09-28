@@ -39,7 +39,7 @@ export function useDriverDocs(userId: string | undefined) {
 
 export async function openSignedDoc(path: string) {
   const { data, error } = await supabase.storage.from("driver-documents").createSignedUrl(path, 300);
-  if (error || !data) return toast.error("Couldn't open file");
+  if (error || !data) return void toast.error("Couldn't open file");
   window.open(data.signedUrl, "_blank", "noopener");
 }
 
@@ -50,15 +50,15 @@ export function DriverDocuments({ userId }: { userId: string }) {
   const inputs = useRef<Record<string, HTMLInputElement | null>>({});
 
   const upload = async (type: DocType, file: File) => {
-    if (file.size > MAX) return toast.error("File must be under 5 MB");
-    if (!OK_TYPES.includes(file.type)) return toast.error("Use a photo (JPG, PNG, WEBP, HEIC) or a PDF");
+    if (file.size > MAX) return void toast.error("File must be under 5 MB");
+    if (!OK_TYPES.includes(file.type)) return void toast.error("Use a photo (JPG, PNG, WEBP, HEIC) or a PDF");
     setBusy(type);
     const ext = (file.name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "");
     const path = `${userId}/${type}-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("driver-documents").upload(path, file, { contentType: file.type });
     if (upErr) {
       setBusy(null);
-      return toast.error("Upload failed");
+      return void toast.error("Upload failed");
     }
     const existing = docs?.find((d) => d.doc_type === type);
     const { error } = existing
@@ -66,7 +66,7 @@ export function DriverDocuments({ userId }: { userId: string }) {
       : await supabase.from("driver_documents").insert({ user_id: userId, doc_type: type, storage_path: path });
     if (!error && existing) await supabase.storage.from("driver-documents").remove([existing.storage_path]);
     setBusy(null);
-    if (error) return toast.error("Couldn't save document");
+    if (error) return void toast.error("Couldn't save document");
     toast.success("Document uploaded");
     await qc.invalidateQueries({ queryKey: ["driver-docs", userId] });
   };
