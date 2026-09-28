@@ -1,20 +1,24 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { EmptyState } from "@/components/Brand";
-import { formatMoney } from "@/lib/geo";
+import { formatMoney, formatDateTime } from "@/lib/geo";
 
 export const Route = createFileRoute("/_authenticated/driver/earnings")({
   head: () => ({
     meta: [
       { title: "Earnings — Zoomo" },
-      { name: "description", content: "Track your Zoomo earnings for today, this week and all time." },
+      { name: "description", content: "Track your Zoomo earnings, wallet balance and payouts." },
       { property: "og:title", content: "Earnings — Zoomo" },
-      { property: "og:description", content: "Track your Zoomo earnings for today, this week and all time." },
+      { property: "og:description", content: "Track your Zoomo earnings, wallet balance and payouts." },
     ],
   }),
   component: EarningsPage,
@@ -22,24 +26,31 @@ export const Route = createFileRoute("/_authenticated/driver/earnings")({
 
 function EarningsPage() {
   const { user } = useAuth();
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["earnings", user?.id],
     enabled: !!user,
     queryFn: async () => {
-      const { data: rides } = await supabase
-        .from("rides")
-        .select("driver_earnings,final_fare,completed_at")
-        .eq("driver_id", user!.id)
-        .eq("status", "completed")
-        .order("completed_at", { ascending: false });
-      const { data: payouts } = await supabase
-        .from("wallet_transactions")
-        .select("*")
-        .eq("kind", "earning")
-        .order("created_at", { ascending: false })
-        .limit(30);
-      return { rides: rides ?? [], payouts: payouts ?? [] };
+      const [rides, activity, wallet, requests] = await Promise.all([
+        supabase
+          .from("rides")
+          .select("driver_earnings,final_fare,completed_at")
+          .eq("driver_id", user!.id)
+          .eq("status", "completed")
+          .order("completed_at", { ascending: false }),
+        supabase.from("wallet_transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(30),
+        supabase.from("wallets").select("balance").eq("user_id", user!.id).maybeSingle(),
+        supabase.from("payout_requests").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(20),
+      ]);
+      return {
+        rides: rides.data ?? [],
+        activity: activity.data ?? [],
+        balance: Number(wallet.data?.balance ?? 0),
+        requests: requests.data ?? [],
+      };
     },
   });
 
@@ -51,6 +62,30 @@ function EarningsPage() {
       </div>
     );
   }
+
+  const requestPayout = async () => {
+    const amt = Math.round(Number(amount));
+    if (!Number.isFinite(amt) || amt < 100) {
+      toast.error("Minimum payout is ₱100");
+      return;
+    }
+    if (amt > data.balance) {
+      toast.error("Amount is more than your wallet balance");
+      return;
+    }
+    setBusy(true);
+    const { data: res, error } = await supabase.rpc("request_payout", { _amount: amt, _method: method });
+    setBusy(false);
+    const r = res as unknown as { success: boolean; message?: string } | null;
+    if (error || !r?.success) {
+      toast.error(r?.message ?? "Could not request payout");
+      return;
+    }
+    toast.success("Payout requested — Zoomo will send it soon");
+    setAmount("");
+    setMethod("");
+    void refetch();
+  };
 
   const now = new Date();
   const startToday = new Date(now);
@@ -74,12 +109,55 @@ function EarningsPage() {
     return { day: d.toLocaleDateString("en-PH", { weekday: "short", timeZone: "Asia/Manila" }), total: Math.round(total * 100) / 100 };
   });
 
+  const owed = data.balance < 0;
+
   return (
     <div className="mx-auto max-w-lg px-4 py-4">
       <Link to="/driver" className="inline-flex items-center gap-1 text-sm text-muted-foreground">
         <ArrowLeft className="h-4 w-4" /> Dashboard
       </Link>
       <h1 className="mt-3 text-2xl font-bold">Earnings</h1>
+
+      <div className="mt-4 rounded-2xl border border-border p-4">
+        <p className="text-xs text-muted-foreground">{owed ? "Owed to Zoomo" : "Wallet balance"}</p>
+        <p className={`text-2xl font-bold ${owed ? "text-destructive" : ""}`}>{formatMoney(Math.abs(data.balance))}</p>
+        {owed ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            This is Zoomo's commission from cash trips. Settle it with Zoomo to keep driving without interruption.
+          </p>
+        ) : data.balance >= 100 ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs font-semibold">Request payout (min ₱100)</p>
+            <Input type="number" min={100} max={data.balance} placeholder="Amount (₱)" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <Input placeholder="GCash number or bank + account" value={method} onChange={(e) => setMethod(e.target.value)} />
+            <Button className="w-full" disabled={busy} onClick={() => void requestPayout()}>
+              Request payout
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-muted-foreground">You can request a payout once your balance reaches ₱100.</p>
+        )}
+      </div>
+
+      {data.requests.length > 0 && (
+        <div className="mt-3 space-y-2">
+          <h2 className="text-sm font-semibold">Payout requests</h2>
+          {data.requests.map((r) => (
+            <div key={r.id} className="flex items-center justify-between rounded-2xl border border-border p-3 text-sm">
+              <div>
+                <p className="font-medium">
+                  {formatMoney(Number(r.amount))} · {r.method}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatDateTime(r.created_at)}
+                  {r.notes ? ` · ${r.notes}` : ""}
+                </p>
+              </div>
+              <span className="text-xs font-semibold capitalize">{r.status}</span>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
@@ -117,20 +195,26 @@ function EarningsPage() {
         </ResponsiveContainer>
       </div>
 
-      <h2 className="mt-6 text-sm font-semibold">Payout history</h2>
+      <h2 className="mt-6 text-sm font-semibold">Wallet activity</h2>
       <div className="mt-2 space-y-2">
-        {data.payouts.length === 0 && (
-          <EmptyState title="No payouts yet" description="Completed trips pay into your wallet instantly." />
+        {data.activity.length === 0 && (
+          <EmptyState title="No wallet activity yet" description="Wallet-paid trips add to your wallet; cash trips deduct Zoomo's commission." />
         )}
-        {data.payouts.map((p) => (
-          <div key={p.id} className="flex items-center justify-between rounded-2xl border border-border p-3">
-            <div>
-              <p className="text-sm font-medium">{p.description ?? "Trip earnings"}</p>
-              <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleString()}</p>
+        {data.activity.map((p) => {
+          const amt = Number(p.amount);
+          return (
+            <div key={p.id} className="flex items-center justify-between rounded-2xl border border-border p-3">
+              <div>
+                <p className="text-sm font-medium">{p.description ?? p.kind}</p>
+                <p className="text-xs text-muted-foreground">{formatDateTime(p.created_at)}</p>
+              </div>
+              <p className={`font-semibold ${amt < 0 ? "text-destructive" : "text-accent"}`}>
+                {amt < 0 ? "−" : "+"}
+                {formatMoney(Math.abs(amt))}
+              </p>
             </div>
-            <p className="font-semibold text-accent">+{formatMoney(Number(p.amount))}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
