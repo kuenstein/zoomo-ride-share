@@ -107,5 +107,9 @@ SELECT pg_temp.expect('payout above balance refused',
   ((public.request_payout(100, '09171234567 GCash'))->>'success')::boolean::int, 0);
 RESET ROLE;
 
+INSERT INTO public.payment_checkouts (user_id, amount, method) VALUES ('00000000-0000-0000-0000-0000000000a1', 100, 'qrph');
+SELECT pg_temp.expect('qrph checkout row inserts',
+  (SELECT count(*) FROM public.payment_checkouts WHERE user_id='00000000-0000-0000-0000-0000000000a1' AND method='qrph'), 1);
+
 SELECT 'ALL RIDE/MONEY PROTECTION TESTS PASSED' AS result;
 ROLLBACK;
