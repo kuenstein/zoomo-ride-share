@@ -281,7 +281,10 @@ function RidePage() {
               setRateOpen(true);
             }
             if (row.status === "expired") {
-              toast.error("No drivers responded. Try again.");
+              toast.error("No drivers responded in time.", {
+                duration: 15000,
+                action: { label: "Try again", onClick: () => retryRef.current?.() },
+              });
             }
           }
         },
@@ -429,12 +432,10 @@ function RidePage() {
 
   const cancelRide = async () => {
     if (!activeRide) return;
-    const { error } = await supabase
-      .from("rides")
-      .update({ status: "cancelled", cancelled_at: new Date().toISOString(), cancel_reason: "Cancelled by rider" })
-      .eq("id", activeRide.id);
-    if (error) {
-      toast.error("Could not cancel");
+    const { data, error } = await supabase.rpc("rider_cancel_ride", { _ride_id: activeRide.id });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (error || !res?.success) {
+      toast.error(res?.message ?? "Could not cancel");
       return;
     }
     setActiveRide(null);

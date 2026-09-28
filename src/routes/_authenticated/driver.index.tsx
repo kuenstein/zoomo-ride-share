@@ -285,6 +285,7 @@ function DriverHome() {
         .from("rides")
         .select("*")
         .eq("status", "requested")
+        .gte("requested_at", new Date(Date.now() - 2 * 60 * 1000).toISOString())
         .order("created_at", { ascending: false })
         .limit(5);
       const candidate = (data ?? []).find(
@@ -537,6 +538,19 @@ function DriverHome() {
                 </Link>
               </Button>
             </div>
+            {walletInfo && (
+              <Link to="/driver/earnings" className="block rounded-2xl border border-border p-3">
+                <p className="text-xs text-muted-foreground">{walletInfo.balance < 0 ? "Owed to Zoomo" : "Wallet balance"}</p>
+                <p className={`text-lg font-bold ${walletInfo.balance < 0 ? "text-destructive" : ""}`}>
+                  {formatMoney(Math.abs(walletInfo.balance))}
+                </p>
+                {walletInfo.blocked && (
+                  <p className="mt-1 text-xs text-destructive">
+                    You owe more than {formatMoney(walletInfo.limit)} in cash-trip commission. Please settle with Zoomo to go online and accept rides again.
+                  </p>
+                )}
+              </Link>
+            )}
             <Button asChild variant="ghost" className="w-full">
               <Link to="/driver/trips">View trip history</Link>
             </Button>
