@@ -57,11 +57,19 @@ export function isAirportTrip(p: Pricing, a: LatLng | null, b: LatLng | null): b
   return !!((a && haversineKm(a, ap) <= r) || (b && haversineKm(b, ap) <= r));
 }
 
-/** Mirrors the server fare: per-type airport flat fare, else base (first km) + per_km × extra km, rounded, never below minimum. */
+/** Mirrors the server fare: per-type airport flat fare, else base (first km) + per_km × extra km, rounded, never below minimum. Tricycle adds its surcharge. */
 export function estimateFare(p: Pricing, type: VehicleType, km: number, airport = false): number {
   const r = ratesFor(p, type);
   if (airport) return Math.round(r.airport);
-  return fareFromRates(r, km);
+  const surcharge = type === "tricycle" ? Math.round(Number(p.tricycle_surcharge ?? 0)) : 0;
+  return fareFromRates(r, km) + surcharge;
+}
+
+/** Tricycle-only extras: fee per passenger after the first, plus baggage fee. Mirrors the server. */
+export function extrasFee(p: Pricing, type: VehicleType, passengers: number, baggage: boolean): number {
+  if (type !== "tricycle") return 0;
+  const n = Math.min(Math.max(passengers, 1), 4);
+  return Math.round(Number(p.extra_passenger_fee ?? 0) * (n - 1) + (baggage ? Number(p.baggage_fee ?? 0) : 0));
 }
 
 /** Receipt breakdown using current pricing settings. */

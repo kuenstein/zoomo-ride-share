@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      driver_feedback: {
+        Row: {
+          comment: string | null
+          created_at: string
+          driver_id: string
+          id: string
+          ride_id: string
+          rider_id: string
+          sentiment: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          driver_id: string
+          id?: string
+          ride_id: string
+          rider_id: string
+          sentiment: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          driver_id?: string
+          id?: string
+          ride_id?: string
+          rider_id?: string
+          sentiment?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_feedback_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: true
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       driver_locations: {
         Row: {
           driver_id: string
@@ -148,11 +192,13 @@ export type Database = {
           airport_lat: number
           airport_lng: number
           airport_radius_km: number
+          baggage_fee: number
           base_fare: number
           base_fare_bike: number
           base_fare_tricycle: number
           commission_percent: number
           currency: string
+          extra_passenger_fee: number
           id: number
           minimum_fare: number
           minimum_fare_bike: number
@@ -166,6 +212,7 @@ export type Database = {
           per_km_bike: number
           per_km_tricycle: number
           per_minute: number
+          tricycle_surcharge: number
           updated_at: string
         }
         Insert: {
@@ -175,11 +222,13 @@ export type Database = {
           airport_lat?: number
           airport_lng?: number
           airport_radius_km?: number
+          baggage_fee?: number
           base_fare?: number
           base_fare_bike?: number
           base_fare_tricycle?: number
           commission_percent?: number
           currency?: string
+          extra_passenger_fee?: number
           id?: number
           minimum_fare?: number
           minimum_fare_bike?: number
@@ -193,6 +242,7 @@ export type Database = {
           per_km_bike?: number
           per_km_tricycle?: number
           per_minute?: number
+          tricycle_surcharge?: number
           updated_at?: string
         }
         Update: {
@@ -202,11 +252,13 @@ export type Database = {
           airport_lat?: number
           airport_lng?: number
           airport_radius_km?: number
+          baggage_fee?: number
           base_fare?: number
           base_fare_bike?: number
           base_fare_tricycle?: number
           commission_percent?: number
           currency?: string
+          extra_passenger_fee?: number
           id?: number
           minimum_fare?: number
           minimum_fare_bike?: number
@@ -220,6 +272,7 @@ export type Database = {
           per_km_bike?: number
           per_km_tricycle?: number
           per_minute?: number
+          tricycle_surcharge?: number
           updated_at?: string
         }
         Relationships: []
@@ -382,9 +435,13 @@ export type Database = {
           dropoff_lat: number
           dropoff_lng: number
           duration_min: number
+          extra_baggage: boolean
+          extras_fee: number
           fare_estimate: number
+          fare_offer: number | null
           final_fare: number | null
           id: string
+          passengers: number
           payment_method: Database["public"]["Enums"]["payment_method"]
           pickup_address: string
           pickup_lat: number
@@ -413,9 +470,13 @@ export type Database = {
           dropoff_lat: number
           dropoff_lng: number
           duration_min?: number
+          extra_baggage?: boolean
+          extras_fee?: number
           fare_estimate?: number
+          fare_offer?: number | null
           final_fare?: number | null
           id?: string
+          passengers?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
           pickup_address: string
           pickup_lat: number
@@ -444,9 +505,13 @@ export type Database = {
           dropoff_lat?: number
           dropoff_lng?: number
           duration_min?: number
+          extra_baggage?: boolean
+          extras_fee?: number
           fare_estimate?: number
+          fare_offer?: number | null
           final_fare?: number | null
           id?: string
+          passengers?: number
           payment_method?: Database["public"]["Enums"]["payment_method"]
           pickup_address?: string
           pickup_lat?: number
@@ -649,6 +714,7 @@ export type Database = {
     }
     Functions: {
       accept_ride: { Args: { _ride_id: string }; Returns: Json }
+      add_tip: { Args: { _amount: number; _ride_id: string }; Returns: Json }
       admin_stats: { Args: never; Returns: Json }
       calculate_fare: {
         Args: {

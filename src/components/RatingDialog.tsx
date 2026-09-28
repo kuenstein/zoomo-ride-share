@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Star } from "lucide-react";
+import { Star, ThumbsUp, ThumbsDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ export function RatingDialog({
   const [stars, setStars] = useState(5);
   const [comment, setComment] = useState("");
   const [tip, setTip] = useState(0);
+  const [customTip, setCustomTip] = useState("");
+  const [sentiment, setSentiment] = useState<"like" | "dislike" | null>(null);
   const [busy, setBusy] = useState(false);
 
   const submit = async () => {
@@ -46,12 +48,22 @@ export function RatingDialog({
       toast.error("Could not save your rating");
       return;
     }
-    if (allowTip && tip > 0) {
-      const { error: tipErr } = await supabase
-        .from("rides")
-        .update({ tip })
-        .eq("id", rideId);
-      if (tipErr) toast.error("Tip could not be added");
+    if (allowTip && sentiment) {
+      const { error: fbErr } = await supabase.from("driver_feedback").insert({
+        ride_id: rideId,
+        rider_id: raterId,
+        driver_id: rateeId,
+        sentiment,
+        comment: comment || null,
+      });
+      if (fbErr && !fbErr.message.includes("duplicate")) toast.error("Feedback could not be sent");
+    }
+    const tipAmount = customTip !== "" ? Math.round(Number(customTip)) : tip;
+    if (allowTip && tipAmount > 0) {
+      const { data, error: tipErr } = await supabase.rpc("add_tip", { _ride_id: rideId, _amount: tipAmount });
+      const res = data as unknown as { success: boolean; message?: string } | null;
+      if (tipErr || !res?.success) toast.error(res?.message ?? "Tip could not be added");
+      else toast.success(`₱${tipAmount} tip sent — salamat!`);
     }
     setBusy(false);
     toast.success("Thanks for the feedback!");
@@ -75,8 +87,18 @@ export function RatingDialog({
             </button>
           ))}
         </div>
+        {allowTip && (
+          <div className="flex justify-center gap-3">
+            <Button type="button" variant={sentiment === "like" ? "default" : "outline"} onClick={() => setSentiment(sentiment === "like" ? null : "like")}>
+              <ThumbsUp className="mr-1 h-4 w-4" /> Like
+            </Button>
+            <Button type="button" variant={sentiment === "dislike" ? "destructive" : "outline"} onClick={() => setSentiment(sentiment === "dislike" ? null : "dislike")}>
+              <ThumbsDown className="mr-1 h-4 w-4" /> Dislike
+            </Button>
+          </div>
+        )}
         <Textarea
-          placeholder="Leave a comment (optional)"
+          placeholder={allowTip ? "Tell us about your driver (sent to Zoomo support)" : "Leave a comment (optional)"}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
         />
@@ -90,12 +112,22 @@ export function RatingDialog({
                   type="button"
                   variant={tip === t ? "default" : "outline"}
                   size="sm"
-                  onClick={() => setTip(t)}
+                  onClick={() => { setTip(t); setCustomTip(""); }}
                 >
                   {t === 0 ? "No tip" : `₱${t}`}
                 </Button>
               ))}
             </div>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={1000}
+              placeholder="Custom tip (₱)"
+              value={customTip}
+              onChange={(e) => setCustomTip(e.target.value)}
+              className="mt-2 h-9 w-full rounded-md border border-input bg-transparent px-3 text-sm"
+            />
           </div>
         )}
         <Button onClick={submit} disabled={busy} className="w-full">
