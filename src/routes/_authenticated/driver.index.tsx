@@ -88,7 +88,7 @@ function StatusScreen({ title, text }: { title: string; text: string }) {
 function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
   const { user } = useAuth();
   const [license, setLicense] = useState("");
-  const [type, setType] = useState<VehicleType>("economy");
+  const [type, setType] = useState<VehicleType>("tricycle");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [color, setColor] = useState("");

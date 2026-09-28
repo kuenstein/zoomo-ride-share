@@ -14,7 +14,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
+          "Zoomo is Dumaguete's ride app — tricycle and motorcycle rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
       },
       { property: "og:title", content: "Zoomo — Rides in Dumaguete, Padulong na ta!" },
       { property: "og:type", content: "website" },
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Zoomo is Dumaguete's ride app — tricycle, motorcycle, car and van rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
+          "Zoomo is Dumaguete's ride app — tricycle and motorcycle rides across Dumaguete City, Bacong, Sibulan and Valencia. Upfront peso fares, QR Ph or cash.",
       },
     ],
   }),
@@ -31,7 +31,7 @@ export const Route = createFileRoute("/")({
 
 const steps = [
   { icon: MapPin, title: "Set your pickup", text: "We find you automatically, or drop the pin yourself." },
-  { icon: Car, title: "Pick your ride", text: "Tricycle, Motorcycle, Economy, Comfort or XL — fare in pesos, shown upfront." },
+  { icon: Car, title: "Pick your ride", text: "Tricycle or motorcycle (habal-habal) — fare in pesos, shown upfront." },
   { icon: Star, title: "Track and rate", text: "Watch your driver arrive live, then rate the trip." },
 ];
 
@@ -161,7 +161,7 @@ function Landing() {
             Drive with Zoomo. Keep <span className="text-accent">85%</span> of every fare.
           </h2>
           <p className="mt-3 max-w-md text-sm opacity-80">
-            Tricycle, motorcycle, car or van/multicab — sign up with your LTO license and OR/CR, get approved, and go online whenever you want. Earnings land
+            Drive a tricycle or motorcycle — sign up with your LTO license and OR/CR, get approved, and go online whenever you want. Earnings land
             in your wallet the moment a trip ends.
           </p>
           <Button asChild size="lg" className="mt-6">

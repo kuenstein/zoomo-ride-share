@@ -35,7 +35,7 @@ import {
   type Place,
   type RouteResult,
 } from "@/lib/geo";
-import { VEHICLE_OPTIONS, VEHICLE_LABEL, estimateFare, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { VEHICLE_OPTIONS, VEHICLE_LABEL, vehicleLabel, estimateFare, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
 import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
 import { haversineKm } from "@/lib/geo";
 import { TripAssistant } from "@/components/TripAssistant";
@@ -174,7 +174,7 @@ function RidePage() {
   );
   const [receiptId, setReceiptId] = useState<string | null>(null);
   const [route, setRoute] = useState<RouteResult | null>(null);
-  const [vehicle, setVehicle] = useState<VehicleType>("economy");
+  const [vehicle, setVehicle] = useState<VehicleType>("tricycle");
   const [payment, setPayment] = useState<PaymentMethod>("cash");
   const [promo, setPromo] = useState(search.promo ?? "");
   const [promoInfo, setPromoInfo] = useState<{ valid: boolean; discount: number; message: string } | null>(null);
@@ -727,7 +727,7 @@ function TrackingPanel({
           </p>
         </div>
         <Badge variant="secondary">
-          {VEHICLE_LABEL[ride.vehicle_type] ?? ride.vehicle_type}
+          {vehicleLabel(ride.vehicle_type)}
         </Badge>
       </div>
 

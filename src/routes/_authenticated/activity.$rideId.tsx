@@ -112,7 +112,7 @@ function TripDetail() {
 
       <div className="mt-4 rounded-2xl border border-border p-4">
         <p className="mb-2 font-semibold">Receipt</p>
-        <Row label="Ride type" value={ride.vehicle_type} />
+        <Row label="Ride type" value={vehicleLabel(ride.vehicle_type)} />
         <Row label="Distance" value={`${ride.distance_km} km`} />
         <Row label="Duration" value={`${ride.duration_min} min`} />
         <Row label="Fare estimate" value={formatMoney(ride.fare_estimate)} />
