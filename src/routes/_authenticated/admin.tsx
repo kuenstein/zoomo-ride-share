@@ -134,6 +134,7 @@ function AdminDashboard() {
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="areas">Areas</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="payouts">Payouts</TabsTrigger>
         </TabsList>
         </div>
 
@@ -244,6 +245,10 @@ function AdminDashboard() {
           <FeedbackInbox />
         </TabsContent>
 
+        <TabsContent value="payouts" className="space-y-4">
+          <PayoutsAdmin />
+        </TabsContent>
+
         <TabsContent value="areas">
           <AreaManager />
         </TabsContent>
@@ -336,6 +341,7 @@ const SIMPLE_FIELDS = [
   { key: "airport_fare", label: "Airport flat fare (₱)" },
   { key: "commission_percent", label: "Commission %" },
   { key: "airport_radius_km", label: "Airport zone radius (km)" },
+  { key: "max_driver_debt", label: "Max a driver can owe Zoomo (₱)" },
 ] as const;
 
 function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => void }) {
@@ -348,6 +354,7 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
     baggage_fee: String(pricing["baggage_fee"] ?? "15"),
     commission_percent: String(pricing["commission_percent"] ?? "15"),
     airport_radius_km: String(pricing["airport_radius_km"] ?? "3"),
+    max_driver_debt: String(pricing["max_driver_debt"] ?? "500"),
   });
   const [busy, setBusy] = useState(false);
   const num = (k: string) => Number(form[k]);
@@ -378,6 +385,7 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
       baggage_fee: num("baggage_fee"),
       commission_percent: num("commission_percent"),
       airport_radius_km: num("airport_radius_km"),
+      max_driver_debt: num("max_driver_debt"),
     } as Database["public"]["Tables"]["pricing_settings"]["Update"];
     const { error } = await supabase.from("pricing_settings").update(patch).eq("id", 1);
     setBusy(false);
