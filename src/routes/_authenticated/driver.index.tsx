@@ -22,7 +22,7 @@ import {
   haversineKm,
   type LatLng,
 } from "@/lib/geo";
-import { DRIVER_VEHICLES, VEHICLE_OPTIONS, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { DRIVER_VEHICLES, VEHICLE_OPTIONS, STATUS_LABEL, isSupportedType, type VehicleType } from "@/lib/pricing";
 import type { Database } from "@/integrations/supabase/types";
 
 type Ride = Database["public"]["Tables"]["rides"]["Row"];
@@ -88,7 +88,7 @@ function StatusScreen({ title, text }: { title: string; text: string }) {
 function Onboarding({ onDone }: { onDone: () => Promise<void> }) {
   const { user } = useAuth();
   const [license, setLicense] = useState("");
-  const [type, setType] = useState<VehicleType>("economy");
+  const [type, setType] = useState<VehicleType>("tricycle");
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [color, setColor] = useState("");
@@ -190,6 +190,23 @@ function DriverHome() {
   const [busy, setBusy] = useState(false);
   const [rateRide, setRateRide] = useState<Ride | null>(null);
   const declined = useRef<Set<string>>(new Set());
+  const [vehicle, setVehicle] = useState<{ id: string; type: VehicleType } | null>(null);
+  useEffect(() => {
+    if (!driver) return;
+    void supabase.from("vehicles").select("id,type").eq("driver_id", driver.id).order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setVehicle(data));
+  }, [driver]);
+  const vehicleOk = !vehicle || isSupportedType(vehicle.type);
+  const fixVehicle = async (t: VehicleType) => {
+    if (!vehicle) return;
+    const { error } = await supabase.from("vehicles").update({ type: t }).eq("id", vehicle.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    setVehicle({ ...vehicle, type: t });
+    toast.success("Vehicle type updated — you can go online now");
+  };
 
   // Location broadcasting
   useEffect(() => {
@@ -220,6 +237,10 @@ function DriverHome() {
 
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
+    if (next && !vehicleOk) {
+      toast.error("Update your vehicle type to Tricycle or Motorcycle first");
+      return;
+    }
     setOnline(next);
     await supabase.from("drivers").update({ is_online: next }).eq("user_id", user.id);
     await supabase
@@ -409,6 +430,19 @@ function DriverHome() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {!vehicleOk && (
+          <div className="mb-3 space-y-2 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold">Your vehicle type is no longer supported</p>
+            <p className="text-muted-foreground">Zoomo now offers only Tricycle and Motorcycle rides. Update your vehicle type to go online.</p>
+            <div className="grid grid-cols-2 gap-2">
+              {DRIVER_VEHICLES.map((v) => (
+                <Button key={v.type} size="sm" variant="outline" onClick={() => void fixVehicle(v.type)}>
+                  {v.emoji} {v.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {activeRide ? (
           <div className="space-y-3">

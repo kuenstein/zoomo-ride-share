@@ -639,6 +639,10 @@ export type Database = {
         Returns: Json
       }
       credit_paid_checkout: { Args: { _session_id: string }; Returns: Json }
+      driver_vehicle_type: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["vehicle_type"]
+      }
       expire_stale_rides: { Args: never; Returns: number }
       has_role: {
         Args: {

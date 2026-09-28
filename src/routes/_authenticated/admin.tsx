@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { formatMoney, formatDateTime } from "@/lib/geo";
-import { STATUS_LABEL } from "@/lib/pricing";
+import { STATUS_LABEL, vehicleLabel, isSupportedType } from "@/lib/pricing";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -169,7 +169,7 @@ function AdminDashboard() {
                   </p>
                   {d.vehicle && (
                     <p className="text-xs text-muted-foreground">
-                      {d.vehicle.type} · {d.vehicle.color} {d.vehicle.make} {d.vehicle.model} · {d.vehicle.plate}
+                      {vehicleLabel(d.vehicle.type)}{!isSupportedType(d.vehicle.type) && " (unsupported)"} · {d.vehicle.color} {d.vehicle.make} {d.vehicle.model} · {d.vehicle.plate}
                     </p>
                   )}
                 </div>
@@ -339,9 +339,6 @@ const FIELDS: { key: keyof Pricing; label: string }[] = [
   { key: "per_minute", label: "Per minute" },
   { key: "minimum_fare", label: "Minimum fare" },
   { key: "commission_percent", label: "Commission %" },
-  { key: "multiplier_economy", label: "Economy ×" },
-  { key: "multiplier_comfort", label: "Comfort ×" },
-  { key: "multiplier_xl", label: "XL ×" },
   { key: "multiplier_tricycle", label: "Tricycle ×" },
   { key: "multiplier_bike", label: "Motorcycle (habal-habal) ×" },
   { key: "airport_flat_fare", label: "Airport flat fare (₱)" },

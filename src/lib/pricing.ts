@@ -12,39 +12,35 @@ export const VEHICLE_OPTIONS: {
   emoji: string;
 }[] = [
   { type: "tricycle", name: "Tricycle", description: "Classic Dumaguete trike, up to 4", seats: 4, emoji: "🛺" },
-  { type: "economy", name: "Economy", description: "Affordable everyday rides", seats: 4, emoji: "🚗" },
-  { type: "comfort", name: "Comfort", description: "Newer cars, more legroom", seats: 4, emoji: "🚙" },
-  { type: "xl", name: "XL", description: "Van or multicab for groups", seats: 6, emoji: "🚐" },
-  { type: "bike", name: "Motorcycle", description: "Habal-habal — beat the traffic, solo", seats: 1, emoji: "🏍️" },
+  { type: "bike", name: "Motorcycle", description: "Habal-habal — 1 passenger, beats the traffic", seats: 1, emoji: "🏍️" },
 ];
 
 export const DRIVER_VEHICLES: { type: VehicleType; name: string; emoji: string }[] = [
   { type: "tricycle", name: "Tricycle", emoji: "🛺" },
   { type: "bike", name: "Motorcycle", emoji: "🏍️" },
-  { type: "economy", name: "Car", emoji: "🚗" },
-  { type: "xl", name: "Van / Multicab", emoji: "🚐" },
 ];
 
 export const VEHICLE_LABEL: Record<string, string> = {
   tricycle: "Tricycle",
-  economy: "Economy",
-  comfort: "Comfort",
-  xl: "XL (Van/Multicab)",
   bike: "Motorcycle",
 };
 
+/** Ride types Zoomo still offers. Older rows may carry retired types. */
+export const SUPPORTED_TYPES = ["tricycle", "bike"] as const;
+export function isSupportedType(t: string | null | undefined): boolean {
+  return !!t && (SUPPORTED_TYPES as readonly string[]).includes(t);
+}
+/** Safe label for any stored type, including retired ones. */
+export function vehicleLabel(t: string | null | undefined): string {
+  return (t && VEHICLE_LABEL[t]) || "Ride (retired type)";
+}
+
 export function multiplierFor(p: Pricing, type: VehicleType): number {
   switch (type) {
-    case "comfort":
-      return Number(p.multiplier_comfort);
-    case "xl":
-      return Number(p.multiplier_xl);
-    case "bike":
-      return Number(p.multiplier_bike);
     case "tricycle":
       return Number(p.multiplier_tricycle);
     default:
-      return Number(p.multiplier_economy);
+      return Number(p.multiplier_bike);
   }
 }
 
@@ -63,7 +59,7 @@ export function estimateFare(p: Pricing, type: VehicleType, km: number, min: num
 }
 
 export function etaFor(type: VehicleType, min: number): number {
-  const factor = type === "bike" || type === "tricycle" ? 0.8 : type === "xl" ? 1.15 : 1;
+  const factor = type === "bike" ? 0.8 : 0.9;
   return Math.max(2, Math.round(min * factor));
 }
 

@@ -9,7 +9,7 @@ const InputSchema = z.object({
 });
 
 const OutputSchema = z.object({
-  vehicle: z.enum(["tricycle", "economy", "comfort", "xl", "bike"]),
+  vehicle: z.enum(["tricycle", "bike"]),
   reason: z.string(),
   destination_name: z.string().nullable(),
   destination_query: z.string().nullable(),
@@ -26,9 +26,9 @@ export const suggestTrip = createServerFn({ method: "POST" })
     const { generateTextViaGateway, GatewayError } = await import("./ai-gateway.server");
     const places = POPULAR_PLACES.map((p) => p.name).join("; ");
     const system = `You help riders of Zoomo, a ride-hailing app in Dumaguete City, Bacong, Sibulan and Valencia (Negros Oriental, Philippines).
-Ride types: tricycle (up to 4, cheap, short town trips, some luggage), bike (motorcycle habal-habal, 1 passenger, no big luggage, fastest in traffic, good for hilly Valencia roads), economy (car, 4 seats), comfort (newer car, 4 seats, more legroom, good for elderly/airport/business), xl (van/multicab, up to 6, groups or lots of luggage).
+Ride types: tricycle (up to 4, cheap, short town trips, some luggage), bike (motorcycle habal-habal, 1 passenger, no big luggage, fastest in traffic, good for hilly Valencia roads). These are the only two ride types; for groups over 4 suggest tricycle and mention they may need two rides.
 Known places: ${places}. Rider's saved places: ${data.savedPlaces.join("; ") || "none"}.
-Reply ONLY with a JSON object: {"vehicle": one of tricycle|economy|comfort|xl|bike, "reason": short friendly sentence, "destination_name": exact name from known or saved places or null, "destination_query": address search text if destination is mentioned but not in the lists else null, "payment": cash|wallet|card or null if not mentioned, "notes": short note for the driver or null}.`;
+Reply ONLY with a JSON object: {"vehicle": one of tricycle|bike, "reason": short friendly sentence, "destination_name": exact name from known or saved places or null, "destination_query": address search text if destination is mentioned but not in the lists else null, "payment": cash|wallet|card or null if not mentioned, "notes": short note for the driver or null}.`;
     try {
       const text = await generateTextViaGateway(system, [
         { role: "user", content: data.description },
