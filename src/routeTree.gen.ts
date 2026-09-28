@@ -17,7 +17,6 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as AuthenticatedDriverRouteImport } from './routes/_authenticated/driver'
 import { Route as AuthenticatedPlacesRouteImport } from './routes/_authenticated/places'
 import { Route as AuthenticatedPromosRouteImport } from './routes/_authenticated/promos'
 import { Route as AuthenticatedRideRouteImport } from './routes/_authenticated/ride'
@@ -25,6 +24,7 @@ import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated
 import { Route as SignupDriverRouteImport } from './routes/signup.driver'
 import { Route as SignupRiderRouteImport } from './routes/signup.rider'
 import { Route as AuthenticatedActivityRideIdRouteImport } from './routes/_authenticated/activity.$rideId'
+import { Route as AuthenticatedDriverIndexRouteImport } from './routes/_authenticated/driver.index'
 import { Route as AuthenticatedDriverEarningsRouteImport } from './routes/_authenticated/driver.earnings'
 import { Route as ApiPublicPaymongoWebhookRouteImport } from './routes/api/public/paymongo-webhook'
 
@@ -67,11 +67,6 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedDriverRoute = AuthenticatedDriverRouteImport.update({
-  id: '/driver',
-  path: '/driver',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedPlacesRoute = AuthenticatedPlacesRouteImport.update({
   id: '/places',
   path: '/places',
@@ -108,11 +103,17 @@ const AuthenticatedActivityRideIdRoute =
     path: '/$rideId',
     getParentRoute: () => AuthenticatedActivityRoute,
   } as any)
+const AuthenticatedDriverIndexRoute =
+  AuthenticatedDriverIndexRouteImport.update({
+    id: '/driver/',
+    path: '/driver/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDriverEarningsRoute =
   AuthenticatedDriverEarningsRouteImport.update({
-    id: '/earnings',
-    path: '/earnings',
-    getParentRoute: () => AuthenticatedDriverRoute,
+    id: '/driver/earnings',
+    path: '/driver/earnings',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const ApiPublicPaymongoWebhookRoute =
   ApiPublicPaymongoWebhookRouteImport.update({
@@ -129,7 +130,6 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
-  '/driver': typeof AuthenticatedDriverRouteWithChildren
   '/places': typeof AuthenticatedPlacesRoute
   '/promos': typeof AuthenticatedPromosRoute
   '/ride': typeof AuthenticatedRideRoute
@@ -139,6 +139,7 @@ export interface FileRoutesByFullPath {
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/driver/': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,7 +149,6 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
-  '/driver': typeof AuthenticatedDriverRouteWithChildren
   '/places': typeof AuthenticatedPlacesRoute
   '/promos': typeof AuthenticatedPromosRoute
   '/ride': typeof AuthenticatedRideRoute
@@ -158,6 +158,7 @@ export interface FileRoutesByTo {
   '/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/driver': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,7 +170,6 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
-  '/_authenticated/driver': typeof AuthenticatedDriverRouteWithChildren
   '/_authenticated/places': typeof AuthenticatedPlacesRoute
   '/_authenticated/promos': typeof AuthenticatedPromosRoute
   '/_authenticated/ride': typeof AuthenticatedRideRoute
@@ -179,6 +179,7 @@ export interface FileRoutesById {
   '/_authenticated/activity/$rideId': typeof AuthenticatedActivityRideIdRoute
   '/_authenticated/driver/earnings': typeof AuthenticatedDriverEarningsRoute
   '/api/public/paymongo-webhook': typeof ApiPublicPaymongoWebhookRoute
+  '/_authenticated/driver/': typeof AuthenticatedDriverIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -190,7 +191,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/admin'
-    | '/driver'
     | '/places'
     | '/promos'
     | '/ride'
@@ -200,6 +200,7 @@ export interface FileRouteTypes {
     | '/activity/$rideId'
     | '/driver/earnings'
     | '/api/public/paymongo-webhook'
+    | '/driver/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -209,7 +210,6 @@ export interface FileRouteTypes {
     | '/account'
     | '/activity'
     | '/admin'
-    | '/driver'
     | '/places'
     | '/promos'
     | '/ride'
@@ -219,6 +219,7 @@ export interface FileRouteTypes {
     | '/activity/$rideId'
     | '/driver/earnings'
     | '/api/public/paymongo-webhook'
+    | '/driver'
   id:
     | '__root__'
     | '/'
@@ -229,7 +230,6 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/activity'
     | '/_authenticated/admin'
-    | '/_authenticated/driver'
     | '/_authenticated/places'
     | '/_authenticated/promos'
     | '/_authenticated/ride'
@@ -239,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/activity/$rideId'
     | '/_authenticated/driver/earnings'
     | '/api/public/paymongo-webhook'
+    | '/_authenticated/driver/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -310,13 +311,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/driver': {
-      id: '/_authenticated/driver'
-      path: '/driver'
-      fullPath: '/driver'
-      preLoaderRoute: typeof AuthenticatedDriverRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/places': {
       id: '/_authenticated/places'
       path: '/places'
@@ -366,12 +360,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedActivityRideIdRouteImport
       parentRoute: typeof AuthenticatedActivityRoute
     }
+    '/_authenticated/driver/': {
+      id: '/_authenticated/driver/'
+      path: '/driver'
+      fullPath: '/driver/'
+      preLoaderRoute: typeof AuthenticatedDriverIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/driver/earnings': {
       id: '/_authenticated/driver/earnings'
-      path: '/earnings'
+      path: '/driver/earnings'
       fullPath: '/driver/earnings'
       preLoaderRoute: typeof AuthenticatedDriverEarningsRouteImport
-      parentRoute: typeof AuthenticatedDriverRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/paymongo-webhook': {
       id: '/api/public/paymongo-webhook'
@@ -396,37 +397,28 @@ const AuthenticatedActivityRouteWithChildren =
     AuthenticatedActivityRouteChildren,
   )
 
-interface AuthenticatedDriverRouteChildren {
-  AuthenticatedDriverEarningsRoute: typeof AuthenticatedDriverEarningsRoute
-}
-
-const AuthenticatedDriverRouteChildren: AuthenticatedDriverRouteChildren = {
-  AuthenticatedDriverEarningsRoute: AuthenticatedDriverEarningsRoute,
-}
-
-const AuthenticatedDriverRouteWithChildren =
-  AuthenticatedDriverRoute._addFileChildren(AuthenticatedDriverRouteChildren)
-
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedActivityRoute: typeof AuthenticatedActivityRouteWithChildren
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
-  AuthenticatedDriverRoute: typeof AuthenticatedDriverRouteWithChildren
   AuthenticatedPlacesRoute: typeof AuthenticatedPlacesRoute
   AuthenticatedPromosRoute: typeof AuthenticatedPromosRoute
   AuthenticatedRideRoute: typeof AuthenticatedRideRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
+  AuthenticatedDriverEarningsRoute: typeof AuthenticatedDriverEarningsRoute
+  AuthenticatedDriverIndexRoute: typeof AuthenticatedDriverIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedActivityRoute: AuthenticatedActivityRouteWithChildren,
   AuthenticatedAdminRoute: AuthenticatedAdminRoute,
-  AuthenticatedDriverRoute: AuthenticatedDriverRouteWithChildren,
   AuthenticatedPlacesRoute: AuthenticatedPlacesRoute,
   AuthenticatedPromosRoute: AuthenticatedPromosRoute,
   AuthenticatedRideRoute: AuthenticatedRideRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
+  AuthenticatedDriverEarningsRoute: AuthenticatedDriverEarningsRoute,
+  AuthenticatedDriverIndexRoute: AuthenticatedDriverIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
