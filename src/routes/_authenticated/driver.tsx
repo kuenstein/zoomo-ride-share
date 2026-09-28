@@ -315,7 +315,7 @@ function DriverHome() {
   const setStatus = async (status: "arriving" | "in_progress") => {
     if (!activeRide) return;
     setBusy(true);
-    const patch: Record<string, unknown> = { status };
+    const patch: { status: "arriving" | "in_progress"; started_at?: string } = { status };
     if (status === "in_progress") patch.started_at = new Date().toISOString();
     const { error } = await supabase.from("rides").update(patch).eq("id", activeRide.id);
     setBusy(false);

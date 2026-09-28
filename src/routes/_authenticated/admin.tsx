@@ -117,10 +117,10 @@ function AdminDashboard() {
 
       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
-          { label: "Rides today", value: stats?.rides_today ?? 0 },
-          { label: "Revenue today", value: formatMoney(stats?.revenue_today) },
-          { label: "Active drivers", value: stats?.active_drivers ?? 0 },
-          { label: "Pending drivers", value: stats?.pending_drivers ?? 0 },
+          { label: "Rides today", value: stats?.["rides_today"] ?? 0 },
+          { label: "Revenue today", value: formatMoney(stats?.["revenue_today"]) },
+          { label: "Active drivers", value: stats?.["active_drivers"] ?? 0 },
+          { label: "Pending drivers", value: stats?.["pending_drivers"] ?? 0 },
         ].map((s) => (
           <div key={s.label} className="rounded-2xl border border-border p-3">
             <p className="text-[11px] text-muted-foreground">{s.label}</p>
@@ -326,7 +326,7 @@ function PricingEditor({ pricing, onSaved }: { pricing: Pricing; onSaved: () => 
 
   const save = async () => {
     setBusy(true);
-    const patch = Object.fromEntries(FIELDS.map((f) => [f.key, Number(form[f.key])]));
+    const patch = Object.fromEntries(FIELDS.map((f) => [f.key, Number(form[f.key])])) as Partial<Pricing>;
     const { error } = await supabase.from("pricing_settings").update(patch).eq("id", 1);
     setBusy(false);
     if (error) {

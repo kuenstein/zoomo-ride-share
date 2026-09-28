@@ -383,7 +383,7 @@ function RidePage() {
           pickup={activeRide ? { lat: activeRide.pickup_lat, lng: activeRide.pickup_lng } : pickup}
           dropoff={activeRide ? { lat: activeRide.dropoff_lat, lng: activeRide.dropoff_lng } : dropoff}
           driver={driverPos}
-          route={route?.coords}
+          route={route?.coords ?? []}
           draggablePickup={!activeRide}
           onPickupMove={(p) => {
             void reverseGeocode(p).then((address) => setPickup({ ...p, address }));
@@ -404,7 +404,7 @@ function RidePage() {
         {activeRide ? (
           <TrackingPanel
             ride={activeRide}
-            driverInfo={driverInfo}
+            driverInfo={driverInfo ?? null}
             onCancel={cancelRide}
             onToggleChat={() => setShowChat((s) => !s)}
             showChat={showChat}
