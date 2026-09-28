@@ -491,6 +491,7 @@ export type Database = {
           id: string
           make: string
           model: string
+          or_cr_number: string | null
           plate: string
           type: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -501,6 +502,7 @@ export type Database = {
           id?: string
           make: string
           model: string
+          or_cr_number?: string | null
           plate: string
           type?: Database["public"]["Enums"]["vehicle_type"]
         }
@@ -511,6 +513,7 @@ export type Database = {
           id?: string
           make?: string
           model?: string
+          or_cr_number?: string | null
           plate?: string
           type?: Database["public"]["Enums"]["vehicle_type"]
         }
