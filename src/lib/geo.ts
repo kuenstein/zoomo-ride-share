@@ -93,4 +93,50 @@ export function getCurrentPosition(): Promise<LatLng> {
 export const DEFAULT_CENTER: LatLng = { lat: 9.3068, lng: 123.3054 };
 export const DEFAULT_ZOOM = 13;
 
+/** Max distance (km) from Dumaguete center for a fix to be trusted. */
+export const SERVICE_AREA_MAX_KM = 40;
+/** Fixes coarser than this (m) are likely IP-based guesses, not GPS. */
+export const MAX_FIX_ACCURACY_M = 10000;
+
+export type PositionFix = LatLng & { accuracy: number | null; highAccuracy: boolean };
+
+function requestFix(highAccuracy: boolean): Promise<PositionFix> {
+  return new Promise((resolve, reject) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      reject(new Error("Geolocation unavailable"));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: Number.isFinite(pos.coords.accuracy) ? pos.coords.accuracy : null,
+          highAccuracy,
+        }),
+      (err) => reject(err),
+      highAccuracy
+        ? { enableHighAccuracy: true, timeout: 10000, maximumAge: 15000 }
+        : { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
+    );
+  });
+}
+
+/** High-accuracy fix first; falls back to a coarse fix only if that fails (not on permission denial). */
+export async function getPositionFix(): Promise<PositionFix> {
+  try {
+    return await requestFix(true);
+  } catch (err) {
+    if ((err as { code?: number } | null)?.code === 1) throw err;
+    return requestFix(false);
+  }
+}
+
+/** True when a fix is close enough to Dumaguete and precise enough to trust. */
+export function isPlausibleForServiceArea(lat: number, lng: number, accuracyMeters?: number | null): boolean {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return false;
+  if (accuracyMeters != null && accuracyMeters > MAX_FIX_ACCURACY_M) return false;
+  return haversineKm({ lat, lng }, DEFAULT_CENTER) <= SERVICE_AREA_MAX_KM;
+}
+
 export { formatMoney, formatDateTime, formatDate } from "./locale";

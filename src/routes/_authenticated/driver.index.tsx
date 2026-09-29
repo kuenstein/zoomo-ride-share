@@ -233,6 +233,7 @@ function DriverHome() {
   };
 
   const [locDenied, setLocDenied] = useState(false);
+  const [locStale, setLocStale] = useState(false);
   const realFix = useRef(false);
 
   // Location broadcasting
@@ -241,10 +242,17 @@ function DriverHome() {
     let cancelled = false;
     const push = async () => {
       try {
-        const p = await getCurrentPosition();
+        const p = await getPositionFix();
         if (cancelled) return;
-        setPos(p);
         setLocDenied(false);
+        // Reject coarse/IP-based fixes far from Dumaguete; keep the saved location.
+        if (!isPlausibleForServiceArea(p.lat, p.lng, p.accuracy)) {
+          setLocStale(true);
+          if (!pos) setPos(DEFAULT_CENTER);
+          return;
+        }
+        setLocStale(false);
+        setPos({ lat: p.lat, lng: p.lng });
         // First real GPS fix replaces the Dumaguete default even while offline
         if (online || !realFix.current) {
           await supabase
