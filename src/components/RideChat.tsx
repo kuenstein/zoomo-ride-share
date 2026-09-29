@@ -8,7 +8,14 @@ import type { Database } from "@/integrations/supabase/types";
 
 type Msg = Database["public"]["Tables"]["ride_messages"]["Row"];
 
-export function RideChat({ rideId, userId }: { rideId: string; userId: string }) {
+const OPEN_STATUSES = ["accepted", "arriving", "in_progress"];
+/** Chat is sendable only while a driver is assigned and the trip hasn't ended. */
+export const isChatOpen = (status: string | null | undefined) => !!status && OPEN_STATUSES.includes(status);
+
+export function RideChat({ rideId, userId, status }: { rideId: string; userId: string; status: string }) {
+  const open = isChatOpen(status);
+  const [closedByServer, setClosedByServer] = useState(false);
+  const canSend = open && !closedByServer;
   const [messages, setMessages] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -54,7 +61,13 @@ export function RideChat({ rideId, userId }: { rideId: string; userId: string })
       .insert({ ride_id: rideId, sender_id: userId, body });
     setSending(false);
     if (error) {
-      toast.error("Message failed to send");
+      // RLS rejects inserts once the trip is no longer active
+      if (error.code === "42501" || /row-level security/i.test(error.message)) {
+        setClosedByServer(true);
+        toast.message("Chat closed — this trip has ended");
+      } else {
+        toast.error("Message failed to send");
+      }
       return;
     }
     setText("");
@@ -65,7 +78,7 @@ export function RideChat({ rideId, userId }: { rideId: string; userId: string })
       <div className="flex-1 space-y-2 overflow-y-auto p-3">
         {messages.length === 0 ? (
           <p className="pt-10 text-center text-sm text-muted-foreground">
-            No messages yet. Say hello 👋
+            {canSend ? "No messages yet. Say hello 👋" : "No messages on this trip."}
           </p>
         ) : (
           messages.map((m) => (
@@ -83,17 +96,23 @@ export function RideChat({ rideId, userId }: { rideId: string; userId: string })
         )}
         <div ref={endRef} />
       </div>
-      <form onSubmit={send} className="flex gap-2 border-t border-border p-2">
-        <Input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message"
-          aria-label="Message"
-        />
-        <Button type="submit" size="icon" disabled={sending}>
-          <Send className="h-4 w-4" />
-        </Button>
-      </form>
+      {canSend ? (
+        <form onSubmit={send} className="flex gap-2 border-t border-border p-2">
+          <Input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Type a message"
+            aria-label="Message"
+          />
+          <Button type="submit" size="icon" disabled={sending}>
+            <Send className="h-4 w-4" />
+          </Button>
+        </form>
+      ) : (
+        <p className="border-t border-border p-3 text-center text-xs text-muted-foreground">
+          This trip has ended — chat is now closed.
+        </p>
+      )}
     </div>
   );
 }
