@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { DriverDocuments, DOC_TYPES, useDriverDocs } from "@/components/DriverDocuments";
 import { SosButton } from "@/components/SosButton";
 import { RideBoard } from "@/components/RideBoard";
@@ -232,6 +232,9 @@ function DriverHome() {
     toast.success("Vehicle type updated — you can go online now");
   };
 
+  const [locDenied, setLocDenied] = useState(false);
+  const realFix = useRef(false);
+
   // Location broadcasting
   useEffect(() => {
     if (!user) return;
@@ -241,12 +244,24 @@ function DriverHome() {
         const p = await getCurrentPosition();
         if (cancelled) return;
         setPos(p);
-        if (online) {
+        setLocDenied(false);
+        // First real GPS fix replaces the Dumaguete default even while offline
+        if (online || !realFix.current) {
           await supabase
             .from("driver_locations")
-            .upsert({ driver_id: user.id, lat: p.lat, lng: p.lng, is_online: true, updated_at: new Date().toISOString() });
+            .upsert({ driver_id: user.id, lat: p.lat, lng: p.lng, is_online: online, updated_at: new Date().toISOString() });
         }
-      } catch {
+        realFix.current = true;
+      } catch (err) {
+        if (cancelled) return;
+        const code = (err as { code?: number } | null)?.code;
+        if (code === 1) setLocDenied(true);
+        else if (navigator.permissions) {
+          try {
+            const s = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+            setLocDenied(s.state === "denied");
+          } catch { /* ignore */ }
+        }
         if (!pos) setPos(DEFAULT_CENTER);
       }
     };
@@ -430,6 +445,14 @@ function DriverHome() {
 
       <div className="absolute inset-x-0 bottom-0 z-10 max-h-[78vh] overflow-y-auto zoomo-sheet p-4 pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-border" />
+        {locDenied && (
+          <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
+            <p className="font-semibold">Turn on location to get accurate ride requests</p>
+            <p className="text-muted-foreground">
+              Zoomo is showing you at Dumaguete City center for now. Riders are matched by where you really are, so allow location access for this site in your browser settings, then reload the page.
+            </p>
+          </div>
+        )}
         {licenseExpired && (
           <div className="mb-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-sm">
             <p className="font-semibold">Your driver's license has expired</p>
