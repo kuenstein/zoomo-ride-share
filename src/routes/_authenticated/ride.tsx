@@ -805,8 +805,8 @@ function TrackingPanel({
         <div className="flex items-center gap-3 rounded-2xl border border-border p-4">
           <Loader2 className="h-5 w-5 animate-spin text-accent" />
           <div className="flex-1">
-            <p className="text-sm font-medium">Finding you a driver nearby…</p>
-            <p className="text-xs text-muted-foreground">We notify drivers within 5 km first.</p>
+            <p className="text-sm font-medium">Your request is on the board…</p>
+            <p className="text-xs text-muted-foreground">Nearby drivers (within 5 km) pick from open requests, so waiting time may vary. Requests expire after 2 minutes.</p>
           </div>
         </div>
       ) : (
