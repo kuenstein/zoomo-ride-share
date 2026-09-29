@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MapPin, Car, Star, Wallet, ShieldCheck, Clock } from "lucide-react";
-import heroImg from "@/assets/hero.jpg";
+import heroImg from "@/assets/hero-bell-tower.png.asset.json";
 import { Logo } from "@/components/Brand";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -73,10 +73,10 @@ function Landing() {
 
       <section className="relative overflow-hidden">
         <img
-          src={heroImg}
-          alt="A car driving through a city at night"
-          width={1536}
-          height={1024}
+          src={heroImg.url}
+          alt="Dumaguete bell tower at sunset"
+          width={1680}
+          height={945}
           className="absolute inset-0 h-full w-full object-cover opacity-70 dark:opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/80 to-background" />
