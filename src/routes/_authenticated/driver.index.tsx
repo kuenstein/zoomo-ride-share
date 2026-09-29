@@ -11,7 +11,7 @@ import { Clock, Loader2, MessageSquare, Navigation, TrendingUp } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Map } from "@/components/Map";
-import { RideChat } from "@/components/RideChat";
+import { RideChat, isChatOpen } from "@/components/RideChat";
 import { RatingDialog } from "@/components/RatingDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -531,11 +531,13 @@ function DriverHome() {
                   <Navigation className="mr-2 h-4 w-4" /> Navigate
                 </a>
               </Button>
-              <Button variant="outline" onClick={() => setShowChat((s) => !s)}>
-                <MessageSquare className="h-4 w-4" />
-              </Button>
+              {isChatOpen(activeRide.status) && (
+                <Button variant="outline" onClick={() => setShowChat((s) => !s)} aria-label="Chat with rider">
+                  <MessageSquare className="h-4 w-4" />
+                </Button>
+              )}
             </div>
-            {showChat && user && <RideChat rideId={activeRide.id} userId={user.id} />}
+            {showChat && user && <RideChat rideId={activeRide.id} userId={user.id} status={activeRide.status} />}
             <div className="flex gap-2">
               {activeRide.status === "accepted" && (
                 <Button className="flex-1" disabled={busy} onClick={() => setStatus("arriving")}>

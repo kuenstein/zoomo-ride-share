@@ -16,7 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Map } from "@/components/Map";
-import { RideChat } from "@/components/RideChat";
+import { RideChat, isChatOpen } from "@/components/RideChat";
 import { RatingDialog } from "@/components/RatingDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -845,9 +845,11 @@ function TrackingPanel({
                 </p>
               )}
             </div>
-            <Button size="icon" variant="outline" onClick={onToggleChat} aria-label="Chat with driver">
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+            {isChatOpen(ride.status) && (
+              <Button size="icon" variant="outline" onClick={onToggleChat} aria-label="Chat with driver">
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+            )}
             <Button size="icon" variant="outline" aria-label="Call driver" asChild>
               <a href="tel:">
                 <Phone className="h-4 w-4" />
@@ -864,7 +866,7 @@ function TrackingPanel({
             ))}
           </div>
 
-          {showChat && <RideChat rideId={ride.id} userId={userId} />}
+          {showChat && <RideChat rideId={ride.id} userId={userId} status={ride.status} />}
         </>
       )}
 
