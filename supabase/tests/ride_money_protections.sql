@@ -46,7 +46,7 @@ INSERT INTO public.vehicles (driver_id, type, make, model, color, plate) VALUES
   ('00000000-0000-0000-0000-0000000000d3','tricycle','Honda','TMX','Red','T-1');
 INSERT INTO public.rides (id, rider_id, driver_id, status, vehicle_type, pickup_lat, pickup_lng, pickup_address, dropoff_lat, dropoff_lng, dropoff_address, fare_estimate, payment_method) VALUES
   ('00000000-0000-0000-0000-00000000c001','00000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-0000000000a3','accepted','tricycle',9.30,123.30,'A',9.31,123.31,'B',100,'cash'),
-  ('00000000-0000-0000-0000-00000000c002','00000000-0000-0000-0000-0000000000a1','00000000-0000-0000-0000-0000000000a3','in_progress','tricycle',9.30,123.30,'A',9.31,123.31,'B',100,'cash');
+  ('00000000-0000-0000-0000-00000000c002','00000000-0000-0000-0000-0000000000a1',NULL,'in_progress','tricycle',9.30,123.30,'A',9.31,123.31,'B',100,'cash');
 UPDATE public.wallets SET balance = 0 WHERE user_id='00000000-0000-0000-0000-0000000000a3';
 SET LOCAL session_replication_role = origin;
 
@@ -87,6 +87,14 @@ SELECT pg_temp.expect('driver marks arrived',
   ((public.driver_set_ride_status('00000000-0000-0000-0000-00000000c001','arriving'))->>'success')::boolean::int, 1);
 SELECT pg_temp.expect('driver starts trip',
   ((public.driver_set_ride_status('00000000-0000-0000-0000-00000000c001','in_progress'))->>'success')::boolean::int, 1);
+RESET ROLE;
+-- one active ride per driver: retire c001, hand c002 to the driver
+SET LOCAL session_replication_role = replica;
+UPDATE public.rides SET status='cancelled' WHERE id='00000000-0000-0000-0000-00000000c001';
+UPDATE public.rides SET driver_id='00000000-0000-0000-0000-0000000000a3' WHERE id='00000000-0000-0000-0000-00000000c002';
+SET LOCAL session_replication_role = origin;
+SELECT pg_temp.act_as('00000000-0000-0000-0000-0000000000a3');
+SET LOCAL ROLE authenticated;
 SELECT pg_temp.expect('cash trip completes',
   ((public.complete_ride('00000000-0000-0000-0000-00000000c002', 0))->>'success')::boolean::int, 1);
 RESET ROLE;
