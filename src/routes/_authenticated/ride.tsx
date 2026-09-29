@@ -27,7 +27,8 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import {
   DEFAULT_CENTER,
   formatMoney,
-  getCurrentPosition,
+  getPositionFix,
+  isPlausibleForServiceArea,
   getRoute,
   reverseGeocode,
   searchAddress,
@@ -234,14 +235,19 @@ function RidePage() {
     }
     void (async () => {
       try {
-        const pos = await getCurrentPosition();
+        const fix = await getPositionFix();
+        if (!isPlausibleForServiceArea(fix.lat, fix.lng, fix.accuracy)) throw new Error("implausible");
+        const pos = { lat: fix.lat, lng: fix.lng };
         const address = await reverseGeocode(pos);
         setPickup({ ...pos, address });
-      } catch {
+      } catch (err) {
         const address = await reverseGeocode(DEFAULT_CENTER);
         setPickup({ ...DEFAULT_CENTER, address });
+        const implausible = (err as Error | null)?.message === "implausible";
         toast.message("Using a default pickup", {
-          description: "Allow location access or drag the pin to set your exact pickup.",
+          description: implausible
+            ? "We couldn't get an accurate location (got a fix far outside Dumaguete). Drag the pin or search your pickup."
+            : "Allow location access or drag the pin to set your exact pickup.",
         });
       } finally {
         setLocating(false);
@@ -542,7 +548,14 @@ function RidePage() {
                   variant="outline"
                   onClick={async () => {
                     try {
-                      const pos = await getCurrentPosition();
+                      const fix = await getPositionFix();
+                      if (!isPlausibleForServiceArea(fix.lat, fix.lng, fix.accuracy)) {
+                        toast.error("We couldn't get an accurate location", {
+                          description: "Your device reported a spot far outside Dumaguete. Drag the pin or search your pickup instead.",
+                        });
+                        return;
+                      }
+                      const pos = { lat: fix.lat, lng: fix.lng };
                       setPickup({ ...pos, address: await reverseGeocode(pos) });
                       toast.success("Pickup set to your location");
                     } catch {

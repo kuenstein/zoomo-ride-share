@@ -22,7 +22,8 @@ import { Logo } from "@/components/Brand";
 import {
   DEFAULT_CENTER,
   formatMoney,
-  getCurrentPosition,
+  getPositionFix,
+  isPlausibleForServiceArea,
   haversineKm,
   type LatLng,
 } from "@/lib/geo";
@@ -233,6 +234,7 @@ function DriverHome() {
   };
 
   const [locDenied, setLocDenied] = useState(false);
+  const [locStale, setLocStale] = useState(false);
   const realFix = useRef(false);
 
   // Location broadcasting
@@ -241,10 +243,17 @@ function DriverHome() {
     let cancelled = false;
     const push = async () => {
       try {
-        const p = await getCurrentPosition();
+        const p = await getPositionFix();
         if (cancelled) return;
-        setPos(p);
         setLocDenied(false);
+        // Reject coarse/IP-based fixes far from Dumaguete; keep the saved location.
+        if (!isPlausibleForServiceArea(p.lat, p.lng, p.accuracy)) {
+          setLocStale(true);
+          if (!pos) setPos(DEFAULT_CENTER);
+          return;
+        }
+        setLocStale(false);
+        setPos({ lat: p.lat, lng: p.lng });
         // First real GPS fix replaces the Dumaguete default even while offline
         if (online || !realFix.current) {
           await supabase
@@ -294,15 +303,17 @@ function DriverHome() {
       return;
     }
     setOnline(next);
-    await supabase
-      .from("driver_locations")
-      .upsert({
-        driver_id: user.id,
-        lat: pos?.lat ?? DEFAULT_CENTER.lat,
-        lng: pos?.lng ?? DEFAULT_CENTER.lng,
-        is_online: next,
-        updated_at: new Date().toISOString(),
-      });
+    if (realFix.current && pos && isPlausibleForServiceArea(pos.lat, pos.lng)) {
+      await supabase
+        .from("driver_locations")
+        .upsert({ driver_id: user.id, lat: pos.lat, lng: pos.lng, is_online: next, updated_at: new Date().toISOString() });
+    } else {
+      // No trusted fix yet: keep whatever location is saved, only flip online state.
+      await supabase
+        .from("driver_locations")
+        .update({ is_online: next, updated_at: new Date().toISOString() })
+        .eq("driver_id", user.id);
+    }
     toast.success(next ? "You're online — requests incoming" : "You're offline");
     await refresh();
   };
@@ -450,6 +461,14 @@ function DriverHome() {
             <p className="font-semibold">Turn on location to get accurate ride requests</p>
             <p className="text-muted-foreground">
               Zoomo is showing you at Dumaguete City center for now. Riders are matched by where you really are, so allow location access for this site in your browser settings, then reload the page.
+            </p>
+          </div>
+        )}
+        {locStale && !locDenied && (
+          <div className="mb-3 rounded-xl border border-primary/40 bg-primary/10 p-3 text-sm">
+            <p className="font-semibold">Location looks inaccurate</p>
+            <p className="text-muted-foreground">
+              We couldn't get an accurate location for you (got a fix far outside Dumaguete). Move somewhere with a clearer GPS signal, or enable precise/high-accuracy location in your browser/phone settings.
             </p>
           </div>
         )}
