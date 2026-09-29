@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DriverDocuments, DOC_TYPES, useDriverDocs } from "@/components/DriverDocuments";
 import { SosButton } from "@/components/SosButton";
-import { playRequestAlert, unlockAudio, useTitleFlash, useWakeLock } from "@/lib/alerts";
+import { RideBoard } from "@/components/RideBoard";
+import { unlockAudio, useWakeLock } from "@/lib/alerts";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { setStoredMode } from "@/lib/nav";
 import { useQuery } from "@tanstack/react-query";
@@ -209,13 +210,10 @@ function DriverHome() {
   const { user, driver, refresh, profile } = useAuth();
   const [online, setOnline] = useState(driver?.is_online ?? false);
   const [pos, setPos] = useState<LatLng | null>(null);
-  const [incoming, setIncoming] = useState<Ride | null>(null);
-  const [countdown, setCountdown] = useState(20);
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [busy, setBusy] = useState(false);
   const [rateRide, setRateRide] = useState<Ride | null>(null);
-  const declined = useRef<Set<string>>(new Set());
   const [vehicle, setVehicle] = useState<{ id: string; type: VehicleType } | null>(null);
   useEffect(() => {
     if (!driver) return;
@@ -262,11 +260,7 @@ function DriverHome() {
   }, [user, online]);
 
   useWakeLock(online);
-  useEffect(() => {
-    if (incoming?.id) playRequestAlert();
-  }, [incoming?.id]);
   const licenseExpired = !!driver?.license_expiry && driver.license_expiry < new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
-  useTitleFlash(!!incoming);
 
   const toggleOnline = async (next: boolean) => {
     if (!user) return;
@@ -315,78 +309,21 @@ function DriverHome() {
     void loadActive();
   }, [loadActive]);
 
-  // Incoming requests
+  // Keep own active ride in sync
   useEffect(() => {
-    if (!online || activeRide || !user) return;
-    void (async () => {
-      const { data } = await supabase
-        .from("rides")
-        .select("*")
-        .eq("status", "requested")
-        .gte("requested_at", new Date(Date.now() - 2 * 60 * 1000).toISOString())
-        .order("created_at", { ascending: false })
-        .limit(5);
-      const candidate = (data ?? []).find(
-        (r) => !declined.current.has(r.id) && (!pos || haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) <= 5),
-      );
-      if (candidate) setIncoming((cur) => cur ?? candidate);
-    })();
-
+    if (!user) return;
     const channel = supabase
-      .channel("driver-incoming")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "rides" }, (payload) => {
+      .channel("driver-own-rides")
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides", filter: `driver_id=eq.${user.id}` }, (payload) => {
         const r = payload.new as Ride;
-        if (r.status !== "requested" || declined.current.has(r.id)) return;
-        if (pos && haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) > 5) return;
-        setIncoming((cur) => cur ?? r);
-        setCountdown(20);
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides" }, (payload) => {
-        const r = payload.new as Ride;
-        setIncoming((cur) => (cur && cur.id === r.id && r.status !== "requested" ? null : cur));
-        if (r.driver_id === user.id) {
-          if ((ACTIVE as readonly string[]).includes(r.status)) setActiveRide(r);
-          else setActiveRide(null);
-        }
+        if ((ACTIVE as readonly string[]).includes(r.status)) setActiveRide(r);
+        else setActiveRide((cur) => (cur?.id === r.id ? null : cur));
       })
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [online, activeRide, pos, user]);
-
-  // countdown
-  useEffect(() => {
-    if (!incoming) return;
-    setCountdown(20);
-    const t = setInterval(() => {
-      setCountdown((c) => {
-        if (c <= 1) {
-          declined.current.add(incoming.id);
-          setIncoming(null);
-          return 20;
-        }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [incoming]);
-
-  const accept = async () => {
-    if (!incoming) return;
-    setBusy(true);
-    const { data, error } = await supabase.rpc("accept_ride", { _ride_id: incoming.id });
-    setBusy(false);
-    const res = data as unknown as { success: boolean; message?: string } | null;
-    if (error || !res?.success) {
-      toast.error(res?.message ?? "Could not accept this ride");
-      setIncoming(null);
-      return;
-    }
-    toast.success("Ride accepted — head to pickup");
-    setIncoming(null);
-    await loadActive();
-  };
+  }, [user]);
 
   const setStatus = async (status: "arriving" | "in_progress") => {
     if (!activeRide) return;
@@ -609,63 +546,17 @@ function DriverHome() {
             <Button asChild variant="ghost" className="w-full">
               <Link to="/driver/trips">View trip history</Link>
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              {online
-                ? "You're online. New requests within 5 km will pop up here."
-                : "Go online to start receiving ride requests."}
-            </p>
+            {online && !walletInfo?.blocked && vehicleOk && !licenseExpired && driver?.status === "approved" ? (
+              <RideBoard pos={pos} vehicleType={vehicle?.type ?? null} onAccepted={loadActive} />
+            ) : (
+              <p className="text-center text-sm text-muted-foreground">
+                {online ? "Ride requests are paused for your account." : "Go online to see available ride requests."}
+              </p>
+            )}
           </div>
         )}
       </div>
 
-      {incoming && (
-        <div className="fixed inset-0 z-[600] flex items-end justify-center bg-black/50 p-4 sm:items-center">
-          <div className="w-full max-w-sm rounded-3xl bg-card p-5 zoomo-glow">
-            <div className="flex items-center justify-between">
-              <p className="text-lg font-bold">New ride request</p>
-              <span className="grid h-10 w-10 place-items-center rounded-full bg-accent font-bold text-accent-foreground">
-                {countdown}
-              </span>
-            </div>
-            <div className="mt-3 space-y-1 rounded-2xl bg-secondary p-3 text-sm">
-              <p className="flex gap-2">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />
-                <span className="line-clamp-2">{incoming.pickup_address}</span>
-              </p>
-              <p className="flex gap-2">
-                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-foreground" />
-                <span className="line-clamp-2">{incoming.dropoff_address}</span>
-              </p>
-            </div>
-            <div className="mt-3 flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {incoming.distance_km} km ·{" "}
-                {pos
-                  ? `${haversineKm(pos, { lat: incoming.pickup_lat, lng: incoming.pickup_lng }).toFixed(1)} km away`
-                  : "nearby"}
-              </span>
-              <span className="font-bold">
-                {formatMoney(Number(incoming.fare_estimate) - Number(incoming.discount))}
-              </span>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1"
-                onClick={() => {
-                  declined.current.add(incoming.id);
-                  setIncoming(null);
-                }}
-              >
-                Decline
-              </Button>
-              <Button className="flex-1" disabled={busy} onClick={accept}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accept"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {rateRide && user && (
         <RatingDialog
