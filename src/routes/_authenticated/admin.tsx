@@ -17,6 +17,7 @@ import { DriverDocsReview, LaunchChecklist, ReportsAdmin, SafetyAdmin, useOpenIn
 import { ArrowLeft } from "lucide-react";
 import { EmptyState } from "@/components/Brand";
 import { PayoutsAdmin } from "@/components/PayoutsAdmin";
+import { PinsAdmin } from "@/components/PinsAdmin";
 import { formatMoney, formatDateTime } from "@/lib/geo";
 import { STATUS_LABEL, vehicleLabel, isSupportedType, fareFromRates } from "@/lib/pricing";
 
@@ -147,6 +148,7 @@ function AdminDashboard() {
           <TabsTrigger value="pricing">Pricing</TabsTrigger>
           <TabsTrigger value="areas">Areas</TabsTrigger>
           <TabsTrigger value="feedback">Feedback</TabsTrigger>
+          <TabsTrigger value="pins">Pins</TabsTrigger>
           <TabsTrigger value="payouts">Payouts</TabsTrigger>
           <TabsTrigger value="safety" className="gap-1">
             Safety
@@ -270,6 +272,9 @@ function AdminDashboard() {
           <FeedbackInbox />
         </TabsContent>
 
+        <TabsContent value="pins">
+          <PinsAdmin />
+        </TabsContent>
         <TabsContent value="payouts" className="space-y-4">
           <PayoutsAdmin />
         </TabsContent>
