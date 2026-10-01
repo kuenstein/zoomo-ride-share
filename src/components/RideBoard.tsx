@@ -30,10 +30,12 @@ function ago(ms: number) {
 export function RideBoard({
   pos,
   vehicleType,
+  driverId,
   onAccepted,
 }: {
   pos: LatLng | null;
   vehicleType: string | null;
+  driverId: string;
   onAccepted: () => void | Promise<void>;
 }) {
   const [rides, setRides] = useState<Ride[]>([]);
@@ -73,7 +75,15 @@ export function RideBoard({
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "rides" }, (p) => {
         const r = p.new as Ride;
-        if (r.status !== "requested" || r.driver_id) remove(r.id);
+        const eligible =
+          r.status === "requested" && !r.driver_id &&
+          (!r.target_driver_id || (r.target_driver_id === driverId && r.target_status === "pending"));
+        if (!eligible) return remove(r.id);
+        setRides((cur) => [r, ...cur.filter((x) => x.id !== r.id)]);
+        if (r.target_driver_id === driverId) {
+          setFresh((f) => new Set(f).add(r.id));
+          setTimeout(() => setFresh((f) => { const n = new Set(f); n.delete(r.id); return n; }), 1500);
+        }
       })
       .subscribe();
     const poll = setInterval(() => void load(), 30000);
@@ -82,15 +92,26 @@ export function RideBoard({
       clearInterval(poll);
       void supabase.removeChannel(ch);
     };
-  }, [remove]);
+  }, [remove, driverId]);
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  const direct = useMemo(
+    () =>
+      rides.filter(
+        (r) =>
+          r.target_driver_id === driverId && r.target_status === "pending" &&
+          r.target_expires_at != null && new Date(r.target_expires_at).getTime() > now,
+      ),
+    [rides, driverId, now],
+  );
+
   const visible = useMemo(() => {
     const list = rides
+      .filter((r) => !r.target_driver_id)
       .filter((r) => now - new Date(r.requested_at).getTime() < TTL_MS)
       .filter((r) => !vehicleType || r.vehicle_type === vehicleType)
       .map((r) => ({ r, away: pos ? haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) : null }))
@@ -106,16 +127,24 @@ export function RideBoard({
     if (fresh.size > 0) playRequestAlert();
   }, [fresh.size]);
 
-  const accept = async () => {
-    if (!selected) return;
+  const decline = async (id: string) => {
+    const { data } = await supabase.rpc("decline_direct_ride", { _ride_id: id });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    remove(id);
+    if (res?.success) toast.message("Request declined — the rider will pick someone else");
+  };
+
+  const accept = async (ride?: Ride) => {
+    const target = ride ?? selected;
+    if (!target) return;
     setBusy(true);
-    const { data, error } = await supabase.rpc("accept_ride", { _ride_id: selected.id });
+    const { data, error } = await supabase.rpc("accept_ride", { _ride_id: target.id });
     setBusy(false);
     const res = data as unknown as { success: boolean; code?: string; message?: string } | null;
     if (error || !res?.success) {
       if (res?.code === "taken" || !res) {
-        toast.info("Already taken — another driver got this one");
-        remove(selected.id);
+        toast.info(target.target_driver_id ? "This request has expired" : "Already taken — another driver got this one");
+        remove(target.id);
       } else toast.error(res.message ?? "Could not accept this ride");
       setSelected(null);
       return;
@@ -127,6 +156,31 @@ export function RideBoard({
 
   return (
     <section className="space-y-3">
+      {direct.map((r) => {
+        const left = Math.max(0, (new Date(r.target_expires_at!).getTime() - now) / 45000);
+        const away = pos ? haversineKm(pos, { lat: r.pickup_lat, lng: r.pickup_lng }) : null;
+        return (
+          <div key={r.id} className="overflow-hidden rounded-2xl border-2 border-accent bg-accent/10 animate-in fade-in slide-in-from-top-2">
+            <div className="space-y-2 p-3">
+              <p className="text-sm font-bold">⭐ A rider chose you specifically</p>
+              <p className="truncate text-sm">{short(r.pickup_address)} → {short(r.dropoff_address)}</p>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{away != null ? `${away.toFixed(1)} km to pickup · ` : ""}{r.distance_km} km trip</span>
+                <span className="font-bold text-foreground">{formatMoney(rideFare(r))}</span>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => decline(r.id)}>Decline</Button>
+                <Button size="sm" className="flex-1" disabled={busy} onClick={() => accept(r)}>
+                  Accept · {Math.ceil(left * 45)}s
+                </Button>
+              </div>
+            </div>
+            <div className="h-1 bg-secondary">
+              <div className="h-full bg-accent transition-[width] duration-1000 ease-linear" style={{ width: `${left * 100}%` }} />
+            </div>
+          </div>
+        );
+      })}
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-bold">
           Available rides
@@ -218,7 +272,7 @@ export function RideBoard({
               </div>
               <div className="mt-4 flex gap-2">
                 <Button variant="outline" className="flex-1" onClick={() => setSelected(null)}>Back</Button>
-                <Button className="flex-1" disabled={busy} onClick={accept}>
+                <Button className="flex-1" disabled={busy} onClick={() => accept()}>
                   {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "Accept"}
                 </Button>
               </div>

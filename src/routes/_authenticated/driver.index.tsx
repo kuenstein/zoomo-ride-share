@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DriverDocuments, DOC_TYPES, useDriverDocs } from "@/components/DriverDocuments";
 import { SosButton } from "@/components/SosButton";
 import { RideBoard } from "@/components/RideBoard";
+import { NearbyRiders } from "@/components/NearbyRiders";
 import { unlockAudio, useWakeLock } from "@/lib/alerts";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { setStoredMode } from "@/lib/nav";
@@ -387,7 +388,13 @@ function DriverHome() {
 
   const cancelTrip = async () => {
     if (!activeRide) return;
-    const { data, error } = await supabase.rpc("driver_set_ride_status", { _ride_id: activeRide.id, _status: "cancelled" });
+    const reason = window.prompt("Cancel this trip? Tell the rider why (optional):", "");
+    if (reason === null) return;
+    const { data, error } = await supabase.rpc("driver_set_ride_status", {
+      _ride_id: activeRide.id,
+      _status: "cancelled",
+      _reason: reason.trim().slice(0, 200),
+    });
     const res = data as unknown as { success: boolean; message?: string } | null;
     if (error || !res?.success) {
       toast.error(res?.message ?? "Could not cancel this trip");
@@ -591,7 +598,10 @@ function DriverHome() {
               <Link to="/driver/trips">View trip history</Link>
             </Button>
             {online && !walletInfo?.blocked && vehicleOk && !licenseExpired && driver?.status === "approved" ? (
-              <RideBoard pos={pos} vehicleType={vehicle?.type ?? null} onAccepted={loadActive} />
+              <>
+                <RideBoard pos={pos} vehicleType={vehicle?.type ?? null} driverId={user?.id ?? ""} onAccepted={loadActive} />
+                <NearbyRiders />
+              </>
             ) : (
               <p className="text-center text-sm text-muted-foreground">
                 {online ? "Ride requests are paused for your account." : "Go online to see available ride requests."}

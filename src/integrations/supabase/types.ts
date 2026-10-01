@@ -32,6 +32,42 @@ export type Database = {
         }
         Relationships: []
       }
+      community_pins: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          is_hidden: boolean
+          lat: number
+          lng: number
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_hidden?: boolean
+          lat: number
+          lng: number
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_hidden?: boolean
+          lat?: number
+          lng?: number
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       driver_documents: {
         Row: {
           created_at: string
@@ -645,6 +681,7 @@ export type Database = {
           accepted_at: string | null
           cancel_reason: string | null
           cancelled_at: string | null
+          cancelled_by: string | null
           commission: number
           completed_at: string | null
           created_at: string
@@ -672,6 +709,9 @@ export type Database = {
           rider_id: string
           started_at: string | null
           status: Database["public"]["Enums"]["ride_status"]
+          target_driver_id: string | null
+          target_expires_at: string | null
+          target_status: string | null
           tip: number
           updated_at: string
           vehicle_type: Database["public"]["Enums"]["vehicle_type"]
@@ -680,6 +720,7 @@ export type Database = {
           accepted_at?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           commission?: number
           completed_at?: string | null
           created_at?: string
@@ -707,6 +748,9 @@ export type Database = {
           rider_id: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
+          target_driver_id?: string | null
+          target_expires_at?: string | null
+          target_status?: string | null
           tip?: number
           updated_at?: string
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
@@ -715,6 +759,7 @@ export type Database = {
           accepted_at?: string | null
           cancel_reason?: string | null
           cancelled_at?: string | null
+          cancelled_by?: string | null
           commission?: number
           completed_at?: string | null
           created_at?: string
@@ -742,6 +787,9 @@ export type Database = {
           rider_id?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["ride_status"]
+          target_driver_id?: string | null
+          target_expires_at?: string | null
+          target_status?: string | null
           tip?: number
           updated_at?: string
           vehicle_type?: Database["public"]["Enums"]["vehicle_type"]
@@ -1033,6 +1081,14 @@ export type Database = {
         Returns: Json
       }
       credit_paid_checkout: { Args: { _session_id: string }; Returns: Json }
+      decline_direct_ride: { Args: { _ride_id: string }; Returns: Json }
+      driver_available_for: {
+        Args: {
+          _driver: string
+          _type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Returns: boolean
+      }
       driver_debt_blocked: { Args: { _user_id: string }; Returns: boolean }
       driver_docs_complete: {
         Args: { _approved_only: boolean; _user_id: string }
@@ -1050,6 +1106,24 @@ export type Database = {
       driver_vehicle_type: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["vehicle_type"]
+      }
+      drivers_for_pickup: {
+        Args: {
+          _lat: number
+          _lng: number
+          _type: Database["public"]["Enums"]["vehicle_type"]
+        }
+        Returns: {
+          approx_lat: number
+          approx_lng: number
+          avatar_url: string
+          distance_km: number
+          driver_id: string
+          full_name: string
+          rating: number
+          rating_count: number
+          vehicle: string
+        }[]
       }
       expire_stale_rides: { Args: never; Returns: number }
       geo_hit: { Args: { _limit: number; _user: string }; Returns: boolean }
@@ -1082,6 +1156,16 @@ export type Database = {
           lng: number
         }[]
       }
+      nearby_ride_requests: {
+        Args: never
+        Returns: {
+          area: string
+          direct_to_me: boolean
+          distance_km: number
+          requested_at: string
+          vehicle_type: Database["public"]["Enums"]["vehicle_type"]
+        }[]
+      }
       raise_sos: {
         Args: { _lat?: number; _lng?: number; _ride_id: string }
         Returns: Json
@@ -1090,6 +1174,7 @@ export type Database = {
         Args: { _amount: number; _method: string }
         Returns: Json
       }
+      ride_broadcast: { Args: { _ride_id: string }; Returns: Json }
       ride_fare: {
         Args: {
           _dlat: number
@@ -1102,6 +1187,11 @@ export type Database = {
         }
         Returns: number
       }
+      ride_retarget: {
+        Args: { _driver_id: string; _ride_id: string }
+        Returns: Json
+      }
+      rider_cancel_blocked: { Args: { _ride_id: string }; Returns: boolean }
       rider_cancel_ride: {
         Args: { _reason?: string; _ride_id: string }
         Returns: Json

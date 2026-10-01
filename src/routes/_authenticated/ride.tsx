@@ -36,10 +36,13 @@ import {
   type Place,
   type RouteResult,
 } from "@/lib/geo";
-import { VEHICLE_OPTIONS, VEHICLE_LABEL, vehicleLabel, estimateFare, extrasFee, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
+import { VEHICLE_OPTIONS, vehicleLabel, estimateFare, extrasFee, etaFor, isAirportTrip, STATUS_LABEL, type VehicleType } from "@/lib/pricing";
 import { POPULAR_PLACES, type ServiceArea } from "@/lib/places";
 import { haversineKm } from "@/lib/geo";
-import { TripAssistant } from "@/components/TripAssistant";
+import { SavePinButton } from "@/components/SavePinButton";
+import { DriverList, useAvailableDrivers, type PickableDriver } from "@/components/DriverPicker";
+import { useCommunityPins } from "@/hooks/useCommunityPins";
+import type { MapPin as CommunityMapPin } from "@/components/MapView";
 import { SosButton } from "@/components/SosButton";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -191,6 +194,16 @@ function RidePage() {
   const [finishedRide, setFinishedRide] = useState<Ride | null>(null);
   const [rateOpen, setRateOpen] = useState(false);
   const [locating, setLocating] = useState(true);
+  const [mode, setMode] = useState<"any" | "choose">("any");
+  const [chosen, setChosen] = useState<PickableDriver | null>(null);
+  const [driverCancelled, setDriverCancelled] = useState<Ride | null>(null);
+  const [pinChoice, setPinChoice] = useState<CommunityMapPin | null>(null);
+  const { data: communityPins } = useCommunityPins(!!user);
+  const mapPins = useMemo(
+    () => (communityPins ?? []).map((p) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng })),
+    [communityPins],
+  );
+  const { data: pickable, isLoading: pickableLoading } = useAvailableDrivers(pickup, vehicle, mode === "choose" && !activeRide);
 
   const { data: pricing } = useQuery({
     queryKey: ["pricing"],
@@ -287,6 +300,17 @@ function RidePage() {
             if (row.status === "completed") {
               setFinishedRide(row);
               setRateOpen(true);
+            }
+            if (row.status === "cancelled" && row.cancelled_by === "driver") {
+              setDriverCancelled(row);
+              setPickup({ lat: row.pickup_lat, lng: row.pickup_lng, address: row.pickup_address });
+              setDropoff({ lat: row.dropoff_lat, lng: row.dropoff_lng, address: row.dropoff_address });
+              if (row.vehicle_type === "tricycle" || row.vehicle_type === "bike") setVehicle(row.vehicle_type);
+              setMode("any");
+              toast.error("Your driver cancelled this trip", {
+                description: row.cancel_reason && row.cancel_reason !== "Cancelled by driver" ? `Reason: ${row.cancel_reason}` : undefined,
+                duration: 20000,
+              });
             }
             if (row.status === "expired") {
               toast.error("No drivers responded in time.", {
@@ -407,7 +431,12 @@ function RidePage() {
       toast.error("Zoomo isn't available there yet", { description: `We currently serve ${areaNames}.` });
       return;
     }
+    if (mode === "choose" && !chosen) {
+      toast.error("Pick a driver first, or switch to Any available driver");
+      return;
+    }
     setRequesting(true);
+    setDriverCancelled(null);
     const { data, error } = await supabase
       .from("rides")
       .insert({
@@ -426,16 +455,24 @@ function RidePage() {
         passengers: vehicle === "tricycle" ? passengers : 1,
         extra_baggage: vehicle === "tricycle" ? baggage : false,
         fare_offer: offerValid ? offerNum : null,
+        target_driver_id: mode === "choose" ? chosen!.driver_id : null,
       })
       .select()
       .single();
     setRequesting(false);
     if (error) {
-      toast.error(error.message.includes("not yet available") ? "Zoomo isn't available there yet" : "Could not request your ride");
+      toast.error(
+        error.message.includes("not yet available")
+          ? "Zoomo isn't available there yet"
+          : error.message.includes("no longer available")
+            ? "That driver just became unavailable — please choose another"
+            : "Could not request your ride",
+      );
       return;
     }
     setActiveRide(data);
-    toast.success("Looking for a nearby driver…");
+    setChosen(null);
+    toast.success(data.target_driver_id ? "Request sent to your chosen driver" : "Looking for a nearby driver…");
   };
 
   retryRef.current = () => void requestRide();
@@ -449,7 +486,23 @@ function RidePage() {
       return;
     }
     setActiveRide(null);
-    toast.success("Ride cancelled");
+    toast.success("You cancelled this ride");
+  };
+
+  const broadcastRide = async () => {
+    if (!activeRide) return;
+    const { data } = await supabase.rpc("ride_broadcast", { _ride_id: activeRide.id });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (!res?.success) toast.error(res?.message ?? "Could not send your request");
+    else toast.success("Sent to all nearby drivers");
+  };
+
+  const retargetRide = async (driverId: string) => {
+    if (!activeRide) return;
+    const { data } = await supabase.rpc("ride_retarget", { _ride_id: activeRide.id, _driver_id: driverId });
+    const res = data as unknown as { success: boolean; message?: string } | null;
+    if (!res?.success) toast.error(res?.message ?? "Could not send your request");
+    else toast.success("Request sent to your new driver");
   };
 
   const mapCenter = driverPos ?? pickup ?? DEFAULT_CENTER;
@@ -463,6 +516,9 @@ function RidePage() {
           pickup={activeRide ? { lat: activeRide.pickup_lat, lng: activeRide.pickup_lng } : pickup}
           dropoff={activeRide ? { lat: activeRide.dropoff_lat, lng: activeRide.dropoff_lng } : dropoff}
           driver={driverPos}
+          pins={mapPins}
+          onPinClick={(p) => !activeRide && setPinChoice(p)}
+          nearby={mode === "choose" && !activeRide ? (pickable ?? []).map((d) => ({ lat: d.approx_lat, lng: d.approx_lng })) : []}
           route={route?.coords ?? []}
           draggablePickup={!activeRide}
           onPickupMove={(p) => {
@@ -494,11 +550,36 @@ function RidePage() {
             </div>
           </div>
         )}
+        {driverCancelled && !activeRide && (
+          <div className="mb-4 rounded-2xl border-2 border-destructive bg-destructive/10 p-4" role="alert">
+            <p className="text-base font-bold">Your driver cancelled</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {driverCancelled.cancel_reason && driverCancelled.cancel_reason !== "Cancelled by driver"
+                ? `Reason given: “${driverCancelled.cancel_reason}”`
+                : "No reason was given."}{" "}
+              You weren't charged. Your pickup and destination are ready below.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => setDriverCancelled(null)}>Dismiss</Button>
+              <Button
+                onClick={() => {
+                  setDriverCancelled(null);
+                  void requestRide();
+                }}
+              >
+                Find another ride
+              </Button>
+            </div>
+          </div>
+        )}
         {activeRide ? (
           <TrackingPanel
             ride={activeRide}
             driverInfo={driverInfo ?? null}
             onCancel={cancelRide}
+            driverPos={driverPos}
+            onBroadcast={broadcastRide}
+            onRetarget={retargetRide}
             onToggleChat={() => setShowChat((s) => !s)}
             showChat={showChat}
             userId={user?.id ?? ""}
@@ -522,26 +603,14 @@ function RidePage() {
                 />
               )}
               <AddressField label="Where to?" value={dropoff?.address ?? ""} onPick={(p) => setDropoff(p)} />
-              <TripAssistant
-                savedPlaces={(savedPlaces ?? []).map((s) => s.label)}
-                onApply={async (s) => {
-                  setVehicle(s.vehicle);
-                  if (s.payment) setPayment(s.payment);
-                  const name = s.destination_name?.toLowerCase();
-                  const known =
-                    name &&
-                    (POPULAR_PLACES.find((p) => p.name.toLowerCase() === name) ??
-                      (savedPlaces ?? []).find((p) => p.label.toLowerCase() === name));
-                  if (known) {
-                    setDropoff({ lat: known.lat, lng: known.lng, address: known.address });
-                  } else if (s.destination_query || s.destination_name) {
-                    const found = await searchAddress(s.destination_query ?? s.destination_name ?? "");
-                    if (found[0]) setDropoff(found[0]);
-                    else toast.message("Couldn't find that destination — please pick it above.");
-                  }
-                  toast.success(`${VEHICLE_LABEL[s.vehicle]} selected`);
-                }}
-              />
+              {pinChoice && (
+                <div className="flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 p-2 text-sm">
+                  <span className="min-w-0 flex-1 truncate">Use “{pinChoice.name}” as</span>
+                  <Button size="sm" variant="outline" onClick={() => { setPickup({ lat: pinChoice.lat, lng: pinChoice.lng, address: pinChoice.name }); setPinChoice(null); }}>Pickup</Button>
+                  <Button size="sm" onClick={() => { setDropoff({ lat: pinChoice.lat, lng: pinChoice.lng, address: pinChoice.name }); setPinChoice(null); }}>Destination</Button>
+                  <button onClick={() => setPinChoice(null)} aria-label="Close"><X className="h-4 w-4" /></button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">
                 <Button
                   size="sm"
@@ -565,6 +634,7 @@ function RidePage() {
                 >
                   <LocateFixed className="mr-1 h-3.5 w-3.5" /> Current location
                 </Button>
+                <SavePinButton at={pickup} />
                 {(savedPlaces ?? []).length === 0 && (
                   <Button asChild size="sm" variant="secondary">
                     <Link to="/places">
@@ -597,6 +667,16 @@ function RidePage() {
                       className="flex items-center gap-1 rounded-full border border-border px-3 py-1 text-xs hover:bg-secondary"
                     >
                       <MapPin className="h-3 w-3 text-accent" /> {pl.name}
+                    </button>
+                  ))}
+                  {(communityPins ?? []).slice(0, 30).map((cp) => (
+                    <button
+                      key={cp.id}
+                      onClick={() => setPinChoice({ id: cp.id, name: cp.name, lat: cp.lat, lng: cp.lng })}
+                      className="flex items-center gap-1 rounded-full border border-dashed border-border px-3 py-1 text-xs hover:bg-secondary"
+                      title="Community pin"
+                    >
+                      <MapPin className="h-3 w-3 text-muted-foreground" /> {cp.name}
                     </button>
                   ))}
                 </div>
@@ -734,11 +814,28 @@ function RidePage() {
                   </p>
                 )}
 
-                <Button className="h-12 w-full text-base" onClick={requestRide} disabled={requesting}>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 rounded-full border border-border p-0.5 text-xs">
+                    {(["any", "choose"] as const).map((m) => (
+                      <button
+                        key={m}
+                        onClick={() => { setMode(m); setChosen(null); }}
+                        className={`rounded-full px-3 py-1.5 font-medium ${mode === m ? "bg-foreground text-background" : "text-muted-foreground"}`}
+                      >
+                        {m === "any" ? "Any available driver" : "Choose your driver"}
+                      </button>
+                    ))}
+                  </div>
+                  {mode === "choose" && (
+                    <DriverList drivers={pickable} loading={pickableLoading} selectedId={chosen?.driver_id ?? null} onSelect={setChosen} />
+                  )}
+                </div>
+
+                <Button className="h-12 w-full text-base" onClick={requestRide} disabled={requesting || (mode === "choose" && !chosen)}>
                   {requesting ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (
-                    <>Request {VEHICLE_OPTIONS.find((v) => v.type === vehicle)?.name} · {formatMoney(netFare)}</>
+                    <>{mode === "choose" ? (chosen ? `Request ${chosen.full_name}` : "Pick a driver") : `Request ${VEHICLE_OPTIONS.find((v) => v.type === vehicle)?.name}`} · {formatMoney(netFare)}</>
                   )}
                 </Button>
               </>
@@ -773,7 +870,13 @@ function TrackingPanel({
   onToggleChat,
   showChat,
   userId,
+  driverPos,
+  onBroadcast,
+  onRetarget,
 }: {
+  driverPos: LatLng | null;
+  onBroadcast: () => void;
+  onRetarget: (driverId: string) => void;
   ride: Ride;
   driverInfo?: { profile: { full_name: string; rating: number; avatar_url: string | null } | null; vehicle: { make: string; model: string; color: string; plate: string } | null; trips: number } | null;
   onCancel: () => void;
@@ -783,6 +886,24 @@ function TrackingPanel({
 }) {
   const steps = ["accepted", "arriving", "in_progress", "completed"] as const;
   const currentIndex = steps.indexOf(ride.status as (typeof steps)[number]);
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const isDirect = ride.status === "requested" && !!ride.target_driver_id;
+  const directLeft = isDirect && ride.target_expires_at ? Math.max(0, Math.ceil((new Date(ride.target_expires_at).getTime() - now) / 1000)) : 0;
+  const directFailed = isDirect && (ride.target_status === "declined" || directLeft === 0);
+  const [picking, setPicking] = useState(false);
+  const { data: others, isLoading: othersLoading } = useAvailableDrivers(
+    { lat: ride.pickup_lat, lng: ride.pickup_lng },
+    ride.vehicle_type as VehicleType,
+    directFailed && picking,
+  );
+  const driverNear =
+    (ride.status === "accepted" || ride.status === "arriving") &&
+    !!driverPos &&
+    haversineKm(driverPos, { lat: ride.pickup_lat, lng: ride.pickup_lng }) <= 1;
 
   return (
     <div className="space-y-4">
@@ -814,7 +935,37 @@ function TrackingPanel({
         </div>
       </div>
 
-      {ride.status === "requested" ? (
+      {isDirect ? (
+        directFailed ? (
+          <div className="space-y-3 rounded-2xl border-2 border-destructive/60 bg-destructive/5 p-4">
+            <p className="text-sm font-semibold">
+              {ride.target_status === "declined" ? "That driver can't take this trip." : "Your chosen driver didn't respond in time."}
+            </p>
+            <p className="text-xs text-muted-foreground">What would you like to do?</p>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" onClick={() => setPicking((v) => !v)}>Pick another driver</Button>
+              <Button onClick={onBroadcast}>Any available driver</Button>
+            </div>
+            {picking && (
+              <DriverList
+                drivers={others}
+                loading={othersLoading}
+                selectedId={null}
+                excludeId={ride.target_driver_id}
+                onSelect={(d) => { setPicking(false); onRetarget(d.driver_id); }}
+              />
+            )}
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 rounded-2xl border border-accent/50 p-4">
+            <Loader2 className="h-5 w-5 animate-spin text-accent" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Waiting for your chosen driver… {directLeft}s</p>
+              <p className="text-xs text-muted-foreground">Only this driver can see your request. If they don't respond, you can pick someone else.</p>
+            </div>
+          </div>
+        )
+      ) : ride.status === "requested" ? (
         <div className="flex items-center gap-3 rounded-2xl border border-border p-4">
           <Loader2 className="h-5 w-5 animate-spin text-accent" />
           <div className="flex-1">
@@ -882,9 +1033,16 @@ function TrackingPanel({
       </div>
 
       {ride.status !== "in_progress" && (
-        <Button variant="outline" className="w-full" onClick={onCancel}>
-          Cancel ride
-        </Button>
+        <div className="space-y-1">
+          <Button variant="outline" className="w-full" onClick={onCancel} disabled={driverNear}>
+            Cancel ride
+          </Button>
+          {driverNear && (
+            <p className="text-center text-xs text-muted-foreground">
+              Your driver is almost there — cancelling now isn't available.
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
