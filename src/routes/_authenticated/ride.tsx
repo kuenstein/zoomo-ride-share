@@ -189,7 +189,7 @@ function RidePage() {
   const [baggage, setBaggage] = useState(false);
   const [offer, setOffer] = useState("");
   const [activeRide, setActiveRide] = useState<Ride | null>(null);
-  const [driverPos, setDriverPos] = useState<LatLng | null>(null);
+  const [driverPos, setDriverPos] = useState<(LatLng & { updatedAt?: string }) | null>(null);
   const [showChat, setShowChat] = useState(false);
   const [finishedRide, setFinishedRide] = useState<Ride | null>(null);
   const [rateOpen, setRateOpen] = useState(false);
@@ -337,10 +337,10 @@ function RidePage() {
     void (async () => {
       const { data } = await supabase
         .from("driver_locations")
-        .select("lat,lng")
+        .select("lat,lng,updated_at")
         .eq("driver_id", driverId)
         .maybeSingle();
-      if (data) setDriverPos({ lat: data.lat, lng: data.lng });
+      if (data) setDriverPos({ lat: data.lat, lng: data.lng, updatedAt: data.updated_at });
     })();
     const channel = supabase
       .channel(`driver-pos-${driverId}`)
@@ -348,8 +348,8 @@ function RidePage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "driver_locations", filter: `driver_id=eq.${driverId}` },
         (payload) => {
-          const row = payload.new as { lat: number; lng: number };
-          if (row) setDriverPos({ lat: row.lat, lng: row.lng });
+          const row = payload.new as { lat: number; lng: number; updated_at: string };
+          if (row) setDriverPos({ lat: row.lat, lng: row.lng, updatedAt: row.updated_at });
         },
       )
       .subscribe();
@@ -608,6 +608,19 @@ function RidePage() {
                   <span className="min-w-0 flex-1 truncate">Use “{pinChoice.name}” as</span>
                   <Button size="sm" variant="outline" onClick={() => { setPickup({ lat: pinChoice.lat, lng: pinChoice.lng, address: pinChoice.name }); setPinChoice(null); }}>Pickup</Button>
                   <Button size="sm" onClick={() => { setDropoff({ lat: pinChoice.lat, lng: pinChoice.lng, address: pinChoice.name }); setPinChoice(null); }}>Destination</Button>
+                  <button
+                    className="text-xs text-muted-foreground underline"
+                    onClick={async () => {
+                      const reason = window.prompt("What's wrong with this pin? (e.g. wrong spot, offensive name, someone's private home)")?.trim();
+                      if (!reason || reason.length < 2) return;
+                      const { error } = await supabase.from("pin_reports").insert({ pin_id: pinChoice.id, reason: reason.slice(0, 500) });
+                      if (error) toast.error(error.code === "23505" ? "You already reported this pin" : "Couldn't report this pin");
+                      else toast.success("Thanks — an admin will review this pin");
+                      setPinChoice(null);
+                    }}
+                  >
+                    Report
+                  </button>
                   <button onClick={() => setPinChoice(null)} aria-label="Close"><X className="h-4 w-4" /></button>
                 </div>
               )}
@@ -874,7 +887,7 @@ function TrackingPanel({
   onBroadcast,
   onRetarget,
 }: {
-  driverPos: LatLng | null;
+  driverPos: (LatLng & { updatedAt?: string }) | null;
   onBroadcast: () => void;
   onRetarget: (driverId: string) => void;
   ride: Ride;
@@ -900,10 +913,12 @@ function TrackingPanel({
     ride.vehicle_type as VehicleType,
     directFailed && picking,
   );
+  const preStart = ride.status === "accepted" || ride.status === "arriving";
+  const locFresh = !!driverPos?.updatedAt && now - new Date(driverPos.updatedAt).getTime() < 120_000;
   const driverNear =
-    (ride.status === "accepted" || ride.status === "arriving") &&
-    !!driverPos &&
+    preStart && !!driverPos && locFresh &&
     haversineKm(driverPos, { lat: ride.pickup_lat, lng: ride.pickup_lng }) <= 1;
+  const locStale = preStart && !!driverPos && !locFresh;
 
   return (
     <div className="space-y-4">
@@ -1040,6 +1055,11 @@ function TrackingPanel({
           {driverNear && (
             <p className="text-center text-xs text-muted-foreground">
               Your driver is almost there — cancelling now isn't available.
+            </p>
+          )}
+          {locStale && (
+            <p className="text-center text-xs text-muted-foreground">
+              We haven't received your driver's location for over 2 minutes, so their position on the map may be out of date. You can still cancel.
             </p>
           )}
         </div>

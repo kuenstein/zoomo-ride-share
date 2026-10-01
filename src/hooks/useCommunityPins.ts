@@ -16,6 +16,7 @@ export function useCommunityPins(enabled = true) {
         .from("community_pins")
         .select("*")
         .eq("is_hidden", false)
+        .eq("status", "approved")
         .order("created_at", { ascending: false })
         .limit(500);
       if (error) throw error;

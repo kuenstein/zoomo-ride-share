@@ -31,7 +31,7 @@ export function SavePinButton({ at }: { at: LatLng | null }) {
       toast.error(m.includes("Daily limit") || m.includes("service area") ? m : "Couldn't save this spot");
       return;
     }
-    toast.success("Spot saved — everyone can now see it on the map");
+    toast.success("Spot submitted — it'll appear for everyone once an admin approves it");
     setOpen(false);
     setName("");
   };
