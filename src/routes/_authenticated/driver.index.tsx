@@ -388,7 +388,13 @@ function DriverHome() {
 
   const cancelTrip = async () => {
     if (!activeRide) return;
-    const { data, error } = await supabase.rpc("driver_set_ride_status", { _ride_id: activeRide.id, _status: "cancelled" });
+    const reason = window.prompt("Cancel this trip? Tell the rider why (optional):", "");
+    if (reason === null) return;
+    const { data, error } = await supabase.rpc("driver_set_ride_status", {
+      _ride_id: activeRide.id,
+      _status: "cancelled",
+      _reason: reason.trim().slice(0, 200),
+    });
     const res = data as unknown as { success: boolean; message?: string } | null;
     if (error || !res?.success) {
       toast.error(res?.message ?? "Could not cancel this trip");
