@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DriverDocuments, DOC_TYPES, useDriverDocs } from "@/components/DriverDocuments";
 import { SosButton } from "@/components/SosButton";
 import { RideBoard } from "@/components/RideBoard";
+import { NearbyRiders } from "@/components/NearbyRiders";
 import { unlockAudio, useWakeLock } from "@/lib/alerts";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { setStoredMode } from "@/lib/nav";
@@ -591,7 +592,10 @@ function DriverHome() {
               <Link to="/driver/trips">View trip history</Link>
             </Button>
             {online && !walletInfo?.blocked && vehicleOk && !licenseExpired && driver?.status === "approved" ? (
-              <RideBoard pos={pos} vehicleType={vehicle?.type ?? null} onAccepted={loadActive} />
+              <>
+                <RideBoard pos={pos} vehicleType={vehicle?.type ?? null} driverId={user?.id ?? ""} onAccepted={loadActive} />
+                <NearbyRiders />
+              </>
             ) : (
               <p className="text-center text-sm text-muted-foreground">
                 {online ? "Ride requests are paused for your account." : "Go online to see available ride requests."}
