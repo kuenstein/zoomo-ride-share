@@ -305,6 +305,8 @@ function RidePage() {
               setDriverCancelled(row);
               setPickup({ lat: row.pickup_lat, lng: row.pickup_lng, address: row.pickup_address });
               setDropoff({ lat: row.dropoff_lat, lng: row.dropoff_lng, address: row.dropoff_address });
+              if (row.vehicle_type === "tricycle" || row.vehicle_type === "bike") setVehicle(row.vehicle_type);
+              setMode("any");
               toast.error("Your driver cancelled this trip", {
                 description: row.cancel_reason && row.cancel_reason !== "Cancelled by driver" ? `Reason: ${row.cancel_reason}` : undefined,
                 duration: 20000,
