@@ -9,11 +9,19 @@ export type MapViewProps = {
   dropoff?: LatLng | null;
   driver?: LatLng | null;
   nearby?: LatLng[];
+  pins?: MapPin[];
+  onPinClick?: (p: MapPin) => void;
   route?: [number, number][];
   draggablePickup?: boolean;
   onPickupMove?: (p: LatLng) => void;
   className?: string;
 };
+
+export type MapPin = LatLng & { id: string; name: string };
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
 
 function pinIcon(color: string, glyph: string) {
   return L.divIcon({
@@ -30,6 +38,8 @@ export default function MapView({
   dropoff,
   driver,
   nearby,
+  pins,
+  onPinClick,
   route,
   draggablePickup,
   onPickupMove,
@@ -39,6 +49,9 @@ export default function MapView({
   const map = useRef<L.Map | null>(null);
   const layers = useRef<Record<string, L.Layer | null>>({});
   const nearbyLayer = useRef<L.LayerGroup | null>(null);
+  const pinLayer = useRef<L.LayerGroup | null>(null);
+  const pinClick = useRef(onPinClick);
+  pinClick.current = onPinClick;
 
   const icons = useMemo(
     () => ({
@@ -46,9 +59,27 @@ export default function MapView({
       dropoff: pinIcon("#FFFFFF", "B"),
       driver: pinIcon("#7CFF5A", "▲"),
       other: pinIcon("#9aa0a6", "•"),
+      community: L.divIcon({
+        className: "",
+        html: `<div style="width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#f5a524;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35)"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 14],
+      }),
     }),
     [],
   );
+
+  useEffect(() => {
+    const group = pinLayer.current;
+    if (!group) return;
+    group.clearLayers();
+    (pins ?? []).forEach((p) => {
+      L.marker([p.lat, p.lng], { icon: icons.community })
+        .bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -12] })
+        .on("click", () => pinClick.current?.(p))
+        .addTo(group);
+    });
+  }, [pins, icons]);
 
   useEffect(() => {
     if (!el.current || map.current) return;
