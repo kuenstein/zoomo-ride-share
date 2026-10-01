@@ -42,6 +42,8 @@ export type Database = {
           lat: number
           lng: number
           name: string
+          reviewed_at: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -53,6 +55,8 @@ export type Database = {
           lat: number
           lng: number
           name: string
+          reviewed_at?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -64,6 +68,8 @@ export type Database = {
           lat?: number
           lng?: number
           name?: string
+          reviewed_at?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: []
@@ -354,6 +360,41 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      pin_reports: {
+        Row: {
+          created_at: string
+          id: string
+          pin_id: string
+          reason: string
+          reporter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pin_id: string
+          reason: string
+          reporter_id?: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pin_id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pin_reports_pin_id_fkey"
+            columns: ["pin_id"]
+            isOneToOne: false
+            referencedRelation: "community_pins"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_settings: {
         Row: {
