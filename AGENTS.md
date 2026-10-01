@@ -10,16 +10,13 @@
 <!-- LOVABLE:END -->
 
 ## Zoomo architecture rules
-- Ride money logic (accept, complete, promo, wallet) lives in Postgres security-definer functions called via RPC — clients must never compute or write fares.
-- Roles live in `user_roles` and are checked with `has_role()`; never store roles on `profiles`.
-- Map rendering goes through `src/components/Map.tsx` (client-only lazy wrapper) — never import Leaflet in an SSR path.
-- Wallet top-ups go through PayMongo checkout (`src/lib/payments.functions.ts`); the wallet is credited only by the signature-verified webhook `/api/public/paymongo-webhook` via `credit_paid_checkout` (service role) — never from the client.
-- No AI in booking: pickup/destination come only from pin drag, address search, quick-picks, saved places and community pins — user removed the AI trip assistant.
-- Direct (choose-your-driver) requests use `rides.target_driver_id`/`target_status`/`target_expires_at` set server-side; RLS hides them from every other driver, and `ride_retarget` / `ride_broadcast` / `decline_direct_ride` are the only ways to change targeting — keeps rider choice private and tamper-proof.
-- Riders see other drivers / drivers see open riders only through `drivers_for_pickup` and `nearby_ride_requests` (rounded coords, area labels, no phone/plate) — never via direct table reads.
-- Rider cancellation is refused once the driver is within 1 km of pickup (`rider_cancel_blocked`, checked in `rider_cancel_ride` and `protect_ride_update`).
-- Navigation mode (rider/driver bottom nav) is derived from the page path, falling back to the last mode saved in `src/lib/nav.ts`; role-based home screens come from `homeForRoles()` there — one source of truth for post-login and 404 redirects.
-- Privacy RLS regression tests live in `supabase/tests/rls_privacy_policies.sql` (self-contained, rolls back) — rerun after any policy change on profiles/drivers/vehicles/driver_locations/pricing.
-- Ride status changes by riders/drivers go through `rider_cancel_ride` / `driver_set_ride_status` / `accept_ride` / `complete_ride`; the `protect_ride_update` trigger blocks any other direct change — keeps trips and money tamper-proof.
-- Cash trips debit Zoomo's commission from the driver wallet (may go negative, capped by `pricing_settings.max_driver_debt`); payouts reserve funds via `request_payout` — wallet stays the single ledger.
-- Ride/money regression tests live in `supabase/tests/ride_money_protections.sql` (rolls back) — rerun after changing ride, wallet or signup functions.
+- Ride money/status logic lives in Postgres security-definer RPCs (`accept_ride`, `complete_ride`, `rider_cancel_ride`, `driver_set_ride_status`); `protect_ride_update` blocks other direct changes — tamper-proof trips.
+- Roles live in `user_roles`, checked via `has_role()` — prevents privilege escalation.
+- Maps go through `src/components/Map.tsx` (client-only) — Leaflet breaks SSR.
+- Wallet credited only by the signed PayMongo webhook via `credit_paid_checkout` — never the client.
+- Cash trips debit commission from driver wallet (capped by `max_driver_debt`); payouts reserve via `request_payout` — wallet is the single ledger.
+- Nav mode and role homes come from `src/lib/nav.ts` — one source of truth.
+- No AI in booking (user removed it).
+- Direct requests: `rides.target_*` set server-side, hidden by RLS from other drivers, changed only via `ride_retarget`/`ride_broadcast`/`decline_direct_ride`.
+- Cross-user discovery only via `drivers_for_pickup`/`nearby_ride_requests` (rounded coords, no contacts) — privacy.
+- Rider cancel refused when driver ≤1 km from pickup (`rider_cancel_blocked`).
