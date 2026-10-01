@@ -70,18 +70,6 @@ export default function MapView({
   );
 
   useEffect(() => {
-    const group = pinLayer.current;
-    if (!group) return;
-    group.clearLayers();
-    (pins ?? []).forEach((p) => {
-      L.marker([p.lat, p.lng], { icon: icons.community })
-        .bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -12] })
-        .on("click", () => pinClick.current?.(p))
-        .addTo(group);
-    });
-  }, [pins, icons]);
-
-  useEffect(() => {
     if (!el.current || map.current) return;
     const m = L.map(el.current, { zoomControl: false, attributionControl: true }).setView(
       [center.lat, center.lng],
@@ -93,6 +81,7 @@ export default function MapView({
     }).addTo(m);
     L.control.zoom({ position: "bottomright" }).addTo(m);
     nearbyLayer.current = L.layerGroup().addTo(m);
+    pinLayer.current = L.layerGroup().addTo(m);
     map.current = m;
     return () => {
       m.remove();
@@ -100,6 +89,18 @@ export default function MapView({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const group = pinLayer.current;
+    if (!group) return;
+    group.clearLayers();
+    (pins ?? []).forEach((p) => {
+      L.marker([p.lat, p.lng], { icon: icons.community })
+        .bindTooltip(escapeHtml(p.name), { direction: "top", offset: [0, -12] })
+        .on("click", () => pinClick.current?.(p))
+        .addTo(group);
+    });
+  }, [pins, icons]);
 
   // markers
   useEffect(() => {
