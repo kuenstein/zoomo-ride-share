@@ -51,7 +51,8 @@ function Landing() {
           <Link to="/" aria-label="Zoomo home">
             <Logo className="text-lg" />
           </Link>
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center justify-end gap-1">
+            <Link to="/whitepaper" className="px-2 py-2 text-sm font-medium text-foreground hover:text-accent">Whitepaper</Link>
             <ThemeToggle />
             {user ? (
               <Button asChild size="sm">

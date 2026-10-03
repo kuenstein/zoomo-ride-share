@@ -198,3 +198,25 @@
   font-size: 9px;
   opacity: 0.6;
 }
+
+@media print {
+  @page { size: A4; margin: 16mm; }
+  :root {
+    --print-paper: oklch(1 0 0);
+    --print-ink: oklch(0.16 0.01 260);
+    --print-rule: oklch(0.82 0.006 250);
+  }
+  .print-hidden { display: none !important; }
+  .whitepaper-print, .whitepaper-print * {
+    background-color: var(--print-paper) !important;
+    color: var(--print-ink) !important;
+    box-shadow: none !important;
+  }
+  .whitepaper-print { min-height: 0; }
+  .whitepaper-print main { max-width: none; padding: 0; }
+  .whitepaper-print h1, .whitepaper-print h2, .whitepaper-print h3, .whitepaper-print tr { break-inside: avoid; }
+  .whitepaper-print h2 { break-after: avoid; }
+  .whitepaper-print table { min-width: 0; width: 100%; }
+  .whitepaper-print th, .whitepaper-print td { border-bottom: 1px solid var(--print-rule); }
+  .whitepaper-print .overflow-x-auto { overflow: visible; }
+}

@@ -20,3 +20,4 @@
 - Direct requests: `rides.target_*` set server-side, hidden by RLS from other drivers, changed only via `ride_retarget`/`ride_broadcast`/`decline_direct_ride`.
 - Cross-user discovery only via `drivers_for_pickup`/`nearby_ride_requests` (rounded coords, no contacts) — privacy.
 - Rider cancel refused when driver ≤1 km from pickup (`rider_cancel_blocked`).
+- Public reference documents use leaf routes with their own metadata and browser printing rather than generated PDF storage — keeps sharing and printing accessible without a document service.
