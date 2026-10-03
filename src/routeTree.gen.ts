@@ -16,6 +16,7 @@ import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as WhitepaperRouteImport } from './routes/whitepaper'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedActivityRouteImport } from './routes/_authenticated/activity'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
@@ -64,6 +65,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
   path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WhitepaperRoute = WhitepaperRouteImport.update({
+  id: '/whitepaper',
+  path: '/whitepaper',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/account': typeof AuthenticatedAccountRoute
   '/activity': typeof AuthenticatedActivityRouteWithChildren
   '/admin': typeof AuthenticatedAdminRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
+  '/whitepaper': typeof WhitepaperRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/activity': typeof AuthenticatedActivityRouteWithChildren
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/whitepaper'
     | '/account'
     | '/activity'
     | '/admin'
@@ -250,6 +260,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/whitepaper'
     | '/account'
     | '/activity'
     | '/admin'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
+    | '/whitepaper'
     | '/_authenticated/account'
     | '/_authenticated/activity'
     | '/_authenticated/admin'
@@ -299,6 +311,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
+  WhitepaperRoute: typeof WhitepaperRoute
   SignupDriverRoute: typeof SignupDriverRoute
   SignupRiderRoute: typeof SignupRiderRoute
   ApiPublicPaymongoWebhookRoute: typeof ApiPublicPaymongoWebhookRoute
@@ -354,6 +367,13 @@ declare module '@tanstack/react-router' {
       path: '/terms'
       fullPath: '/terms'
       preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/whitepaper': {
+      id: '/whitepaper'
+      path: '/whitepaper'
+      fullPath: '/whitepaper'
+      preLoaderRoute: typeof WhitepaperRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/account': {
@@ -514,6 +534,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
+  WhitepaperRoute: WhitepaperRoute,
   SignupDriverRoute: SignupDriverRoute,
   SignupRiderRoute: SignupRiderRoute,
   ApiPublicPaymongoWebhookRoute: ApiPublicPaymongoWebhookRoute,
