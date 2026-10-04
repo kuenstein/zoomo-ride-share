@@ -24,9 +24,8 @@ const pricing = [
 ];
 
 const limitations = [
-  ["QR Ph wallet top-ups", "Pending PayMongo activation", "Use Cash during early beta until QR Ph is confirmed live."],
-  ["Push notifications", "Pending VAPID key setup", "Keep the app open/foregrounded to catch new requests."],
-  ["Map & address search", "Free OpenStreetMap tier", "Fine for beta traffic; a paid provider is needed before public launch."],
+  ["Push notifications", "Pending activation", "Keep the app open/foregrounded to catch new requests."],
+  ["Map & address search", "Using a free-tier mapping service", "Fine for beta traffic; a paid provider is needed before public launch."],
   ["Terms & Privacy pages", "Template text, not yet reviewed by a lawyer", "Do not treat as final legal copy."],
   ["Driver supply", "Small pool of approved test drivers", "Matching times in beta won't reflect a real launch."],
 ];
@@ -55,7 +54,7 @@ function WhitepaperPage() {
             <Printer aria-hidden="true" className="mr-2 h-4 w-4" />Print / Save as PDF
           </Button>
         </div>
-        <p className="mb-10 text-sm text-muted-foreground"><strong className="text-foreground">Document status:</strong> Internal / Beta — not for public distribution · <strong className="text-foreground">Date:</strong> October 2026 · <strong className="text-foreground">Version:</strong> 1.0 (Beta)</p>
+        <p className="mb-10 text-sm text-muted-foreground"><strong className="text-foreground">Document status:</strong> Internal / Beta — not for public distribution · <strong className="text-foreground">Date:</strong> October 2026 · <strong className="text-foreground">Version:</strong> 1.1 (Beta)</p>
 
         <article className="whitepaper-body space-y-5 text-[15px] leading-7 [&_h2]:pt-7 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:pt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:pl-1 [&_li]:marker:text-accent [&_p]:text-foreground">
           <h2>1. Executive summary</h2>
@@ -65,7 +64,8 @@ function WhitepaperPage() {
             <li><strong>Coverage:</strong> Dumaguete City, Bacong, Sibulan and Valencia, with bookings blocked outside these four areas.</li>
             <li><strong>Vehicles:</strong> Tricycle and Motorcycle (habal-habal) only — no car, van or multicab tiers.</li>
             <li><strong>Pricing:</strong> Distance-based (base fare + per-kilometer rate), set independently per vehicle type by the admin.</li>
-            <li><strong>Payments:</strong> Cash, in-app wallet, and QR Ph via PayMongo (scan with GCash, Maya, or any participating bank app).</li>
+            <li><strong>Payments:</strong> Cash only during the open beta.</li>
+            <li><strong>Beta funding:</strong> No driver commission during the beta — the app is supported by optional donations.</li>
             <li><strong>Status:</strong> Functionally complete for a controlled beta; several production-readiness items remain open (Section 9).</li>
           </ul>
 
@@ -88,18 +88,18 @@ function WhitepaperPage() {
           <p><strong>4.1 Booking</strong> — The rider sets a pickup (current location, dragged pin, searched address, a saved place, or a community pin) and a destination the same way. The app shows a fare and distance estimate for Tricycle and Motorcycle before the rider commits. The rider chooses how the request is sent: "Any available driver" broadcasts to every eligible online driver nearby, first to accept gets it; "Choose your driver" lets the rider browse nearby online drivers (name, photo, rating, vehicle, distance) and send the request to one driver only, who gets 45 seconds to accept.</p>
           <p><strong>4.2 Matching</strong> — Drivers who are online, approved, and within the matching radius see open requests on an Available Rides board, sorted by distance, with live updates as requests appear, get taken, or expire. A direct request is hidden from every other driver while pending. Acceptance is atomic, and a driver already on a trip cannot see or accept another one.</p>
           <p><strong>4.3 The trip</strong> — The rider sees the driver's live position, name, rating, vehicle and plate, with status steps and in-app chat that opens only while the trip is active. A rider cannot cancel once their driver is within 1 kilometer of pickup; if a driver cancels, the rider gets an unmistakable alert with the reason and a one-tap way to rebook.</p>
-          <p><strong>4.4 Payment and rating</strong> — The fare is charged by cash, wallet, or a QR Ph top-up, and both sides rate each other. Cash trips still collect the platform's commission from the driver's wallet, so the books stay accurate.</p>
+          <p><strong>4.4 Payment and rating</strong> — On completion, the rider pays the driver directly in cash, and both sides rate each other.</p>
 
           <h2>5. Platform features</h2>
-          <p><strong>Rider:</strong> Map-based booking with address search, quick-pick landmarks, saved places, and shareable community pins · Upfront, distance-based fare estimates · Any-driver or choose-your-driver booking modes · Live trip tracking, in-trip chat, SOS button, and post-trip "report a problem" · Wallet with QR Ph top-up, ride history, receipts, ratings, tips and promo codes.</p>
-          <p><strong>Driver:</strong> Onboarding with LTO license, OR/CR and vehicle-photo verification · Online/offline toggle, live location sharing, Available Rides board · Read-only "riders in your area" view · Trip flow controls and in-trip chat · Earnings dashboard, wallet, and payout requests.</p>
+          <p><strong>Rider:</strong> Map-based booking with address search, quick-pick landmarks, saved places, and shareable community pins · Upfront, distance-based fare estimates · Any-driver or choose-your-driver booking modes · Live trip tracking, in-trip chat, SOS button, and post-trip "report a problem" · Ride history, receipts, ratings, tips and promo codes.</p>
+          <p><strong>Driver:</strong> Onboarding with license and vehicle-document verification · Online/offline toggle, live location sharing, Available Rides board · Read-only "riders in your area" view · Trip flow controls and in-trip chat · Earnings dashboard and trip history.</p>
           <p><strong>Admin:</strong> Driver approval and document review · service-area and pricing configuration per vehicle type · Ride, user, promo code, payout, safety-incident and report oversight · Community-pin moderation and a launch-readiness checklist.</p>
 
           <h2>6. Technology and trust</h2>
-          <p><strong>6.1 Architecture</strong> — Zoomo runs on a Lovable Cloud backend: Postgres for data, Supabase Auth for sign-in, and Supabase Realtime for live ride, location and chat updates. Mapping uses Leaflet with OpenStreetMap tiles and Nominatim/OSRM for search and routing, proxied through the app's own server.</p>
-          <p><strong>6.2 Data protection</strong> — Row-level security is enabled on every table. Money-moving logic runs through server-side functions rather than client code. Signup can only create a rider or driver account — admin access is granted by the operator directly, never through the sign-up form.</p>
+          <p><strong>6.1 Architecture</strong> — Zoomo runs on a secure cloud backend with real-time updates for ride status, driver location, and in-trip chat, paired with interactive mapping for route and fare estimation.</p>
+          <p><strong>6.2 Data protection</strong> — Strict per-user access rules are enforced on every piece of data, so riders, drivers and the admin each see only what they should. Money-affecting actions run only through protected server-side logic rather than client code. Signup can only create a rider or driver account — admin access is granted by the operator directly, never through the sign-up form.</p>
           <p><strong>6.3 Safety</strong> — An SOS button during active trips with one-tap access to 911 and the Philippine Red Cross (143) · Driver document verification before approval, with license-expiry checks · A cancellation guardrail at 1 km with clear driver-cancellation notice · Post-trip reporting reviewed by the admin.</p>
-          <p><strong>6.4 Payments</strong> — Wallet top-ups go through PayMongo using QR Ph. A wallet is only credited after PayMongo's webhook confirms payment, with signature verification so a top-up can never be credited twice.</p>
+          <p><strong>6.4 Payments</strong> — Zoomo currently runs on cash payments only. Riders pay their driver directly at the end of the trip. Other payment options may be introduced after the beta.</p>
 
           <h2>7. Pricing model</h2>
           <p>Fare = base fare + (per-kilometer rate × distance), rounded to the nearest peso, with a minimum fare floor. There is no per-minute charge. Each vehicle type has its own independently configurable rates, plus its own flat airport fare.</p>
@@ -110,7 +110,7 @@ function WhitepaperPage() {
             </table>
           </div>
           <p className="text-sm italic text-muted-foreground">Beta defaults as of this writing — adjustable at any time from the admin Pricing tab, independently per vehicle type.</p>
-          <p>The platform commission (currently 5% of each completed fare, admin-adjustable) is deducted from the driver's earnings on wallet payments, and debited directly from the driver's wallet on cash payments.</p>
+          <p>During this open beta, Zoomo does not take any commission from drivers' earnings — riders pay their driver directly and drivers keep the full fare. Running the app still costs money, so Zoomo accepts optional donations from riders and drivers who'd like to help keep the beta online. This is entirely voluntary and never required to book or complete a ride.</p>
 
           <h2>8. What the beta is meant to test</h2>
           <p>This beta exists to validate the core loop, inquiry to confirmed, completed, paid trip, with real people, real phones, and real Dumaguete streets:</p>
@@ -119,7 +119,7 @@ function WhitepaperPage() {
             <li>Whether the distance-based fares feel fair compared to today's negotiated tricycle/habal-habal rates</li>
             <li>Whether GPS accuracy holds up for drivers and riders moving around town</li>
             <li>Whether the cancellation guardrail and driver-cancellation notice feel fair to both sides</li>
-            <li>Whether QR Ph top-ups complete successfully once PayMongo is activated</li>
+            <li>Whether paying in cash at the end of each trip feels natural for both riders and drivers</li>
             <li>Whether the SOS and report-a-problem flows are easy to find and use when actually needed</li>
           </ul>
           <p><strong>Feedback channel:</strong> testers can use the in-app "Report a problem" action after any trip; the admin reviews all reports and safety incidents from the Admin dashboard.</p>
@@ -138,7 +138,7 @@ function WhitepaperPage() {
             <li>A paid, production-grade maps provider</li>
             <li>Lawyer review of the Terms of Service and Privacy Policy (Data Privacy Act of 2012 compliance)</li>
             <li>Expanded driver supply and a formal driver-recruitment flow</li>
-            <li>Live PayMongo activation for QR Ph, and a review of the platform commission rate</li>
+            <li>Introducing optional digital/cashless payment methods after the beta period</li>
           </ul>
 
           <h2>11. Closing note</h2>
