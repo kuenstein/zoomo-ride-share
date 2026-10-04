@@ -96,10 +96,10 @@ function WhitepaperPage() {
           <p><strong>Admin:</strong> Driver approval and document review · service-area and pricing configuration per vehicle type · Ride, user, promo code, payout, safety-incident and report oversight · Community-pin moderation and a launch-readiness checklist.</p>
 
           <h2>6. Technology and trust</h2>
-          <p><strong>6.1 Architecture</strong> — Zoomo runs on a Lovable Cloud backend: Postgres for data, Supabase Auth for sign-in, and Supabase Realtime for live ride, location and chat updates. Mapping uses Leaflet with OpenStreetMap tiles and Nominatim/OSRM for search and routing, proxied through the app's own server.</p>
-          <p><strong>6.2 Data protection</strong> — Row-level security is enabled on every table. Money-moving logic runs through server-side functions rather than client code. Signup can only create a rider or driver account — admin access is granted by the operator directly, never through the sign-up form.</p>
+          <p><strong>6.1 Architecture</strong> — Zoomo runs on a secure cloud backend with real-time updates for ride status, driver location, and in-trip chat, paired with interactive mapping for route and fare estimation.</p>
+          <p><strong>6.2 Data protection</strong> — Strict per-user access rules are enforced on every piece of data, so riders, drivers and the admin each see only what they should. Money-affecting actions run only through protected server-side logic rather than client code. Signup can only create a rider or driver account — admin access is granted by the operator directly, never through the sign-up form.</p>
           <p><strong>6.3 Safety</strong> — An SOS button during active trips with one-tap access to 911 and the Philippine Red Cross (143) · Driver document verification before approval, with license-expiry checks · A cancellation guardrail at 1 km with clear driver-cancellation notice · Post-trip reporting reviewed by the admin.</p>
-          <p><strong>6.4 Payments</strong> — Wallet top-ups go through PayMongo using QR Ph. A wallet is only credited after PayMongo's webhook confirms payment, with signature verification so a top-up can never be credited twice.</p>
+          <p><strong>6.4 Payments</strong> — Zoomo currently runs on cash payments only. Riders pay their driver directly at the end of the trip. Other payment options may be introduced after the beta.</p>
 
           <h2>7. Pricing model</h2>
           <p>Fare = base fare + (per-kilometer rate × distance), rounded to the nearest peso, with a minimum fare floor. There is no per-minute charge. Each vehicle type has its own independently configurable rates, plus its own flat airport fare.</p>
@@ -110,7 +110,7 @@ function WhitepaperPage() {
             </table>
           </div>
           <p className="text-sm italic text-muted-foreground">Beta defaults as of this writing — adjustable at any time from the admin Pricing tab, independently per vehicle type.</p>
-          <p>The platform commission (currently 5% of each completed fare, admin-adjustable) is deducted from the driver's earnings on wallet payments, and debited directly from the driver's wallet on cash payments.</p>
+          <p>During this open beta, Zoomo does not take any commission from drivers' earnings — riders pay their driver directly and drivers keep the full fare. Running the app still costs money, so Zoomo accepts optional donations from riders and drivers who'd like to help keep the beta online. This is entirely voluntary and never required to book or complete a ride.</p>
 
           <h2>8. What the beta is meant to test</h2>
           <p>This beta exists to validate the core loop, inquiry to confirmed, completed, paid trip, with real people, real phones, and real Dumaguete streets:</p>
@@ -119,7 +119,7 @@ function WhitepaperPage() {
             <li>Whether the distance-based fares feel fair compared to today's negotiated tricycle/habal-habal rates</li>
             <li>Whether GPS accuracy holds up for drivers and riders moving around town</li>
             <li>Whether the cancellation guardrail and driver-cancellation notice feel fair to both sides</li>
-            <li>Whether QR Ph top-ups complete successfully once PayMongo is activated</li>
+            <li>Whether paying in cash at the end of each trip feels natural for both riders and drivers</li>
             <li>Whether the SOS and report-a-problem flows are easy to find and use when actually needed</li>
           </ul>
           <p><strong>Feedback channel:</strong> testers can use the in-app "Report a problem" action after any trip; the admin reviews all reports and safety incidents from the Admin dashboard.</p>
@@ -138,7 +138,7 @@ function WhitepaperPage() {
             <li>A paid, production-grade maps provider</li>
             <li>Lawyer review of the Terms of Service and Privacy Policy (Data Privacy Act of 2012 compliance)</li>
             <li>Expanded driver supply and a formal driver-recruitment flow</li>
-            <li>Live PayMongo activation for QR Ph, and a review of the platform commission rate</li>
+            <li>Introducing optional digital/cashless payment methods after the beta period</li>
           </ul>
 
           <h2>11. Closing note</h2>
