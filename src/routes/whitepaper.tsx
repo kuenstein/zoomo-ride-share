@@ -18,6 +18,11 @@ export const Route = createFileRoute("/whitepaper")({
   component: WhitepaperPage,
 });
 
+const pricing = [
+  ["Tricycle", "₱20 (admin-configurable)", "₱20 / km", "₱20"],
+  ["Motorcycle (habal-habal)", "₱20 (admin-configurable)", "₱20 / km", "₱20"],
+];
+
 const limitations = [
   ["Push notifications", "Pending activation", "Keep the app open/foregrounded to catch new requests."],
   ["Map & address search", "Using a free-tier mapping service", "Fine for beta traffic; a paid provider is needed before public launch."],
@@ -59,7 +64,8 @@ function WhitepaperPage() {
             <li><strong>Coverage:</strong> Dumaguete City, Bacong, Sibulan and Valencia, with bookings blocked outside these four areas.</li>
             <li><strong>Vehicles:</strong> Tricycle and Motorcycle (habal-habal) only — no car, van or multicab tiers.</li>
             <li><strong>Pricing:</strong> Distance-based (base fare + per-kilometer rate), set independently per vehicle type by the admin.</li>
-            <li><strong>Payments:</strong> Cash, in-app wallet, and QR Ph via PayMongo (scan with GCash, Maya, or any participating bank app).</li>
+            <li><strong>Payments:</strong> Cash only during the open beta.</li>
+            <li><strong>Beta funding:</strong> No driver commission during the beta — the app is supported by optional donations.</li>
             <li><strong>Status:</strong> Functionally complete for a controlled beta; several production-readiness items remain open (Section 9).</li>
           </ul>
 
@@ -82,11 +88,11 @@ function WhitepaperPage() {
           <p><strong>4.1 Booking</strong> — The rider sets a pickup (current location, dragged pin, searched address, a saved place, or a community pin) and a destination the same way. The app shows a fare and distance estimate for Tricycle and Motorcycle before the rider commits. The rider chooses how the request is sent: "Any available driver" broadcasts to every eligible online driver nearby, first to accept gets it; "Choose your driver" lets the rider browse nearby online drivers (name, photo, rating, vehicle, distance) and send the request to one driver only, who gets 45 seconds to accept.</p>
           <p><strong>4.2 Matching</strong> — Drivers who are online, approved, and within the matching radius see open requests on an Available Rides board, sorted by distance, with live updates as requests appear, get taken, or expire. A direct request is hidden from every other driver while pending. Acceptance is atomic, and a driver already on a trip cannot see or accept another one.</p>
           <p><strong>4.3 The trip</strong> — The rider sees the driver's live position, name, rating, vehicle and plate, with status steps and in-app chat that opens only while the trip is active. A rider cannot cancel once their driver is within 1 kilometer of pickup; if a driver cancels, the rider gets an unmistakable alert with the reason and a one-tap way to rebook.</p>
-          <p><strong>4.4 Payment and rating</strong> — The fare is charged by cash, wallet, or a QR Ph top-up, and both sides rate each other. Cash trips still collect the platform's commission from the driver's wallet, so the books stay accurate.</p>
+          <p><strong>4.4 Payment and rating</strong> — On completion, the rider pays the driver directly in cash, and both sides rate each other.</p>
 
           <h2>5. Platform features</h2>
-          <p><strong>Rider:</strong> Map-based booking with address search, quick-pick landmarks, saved places, and shareable community pins · Upfront, distance-based fare estimates · Any-driver or choose-your-driver booking modes · Live trip tracking, in-trip chat, SOS button, and post-trip "report a problem" · Wallet with QR Ph top-up, ride history, receipts, ratings, tips and promo codes.</p>
-          <p><strong>Driver:</strong> Onboarding with LTO license, OR/CR and vehicle-photo verification · Online/offline toggle, live location sharing, Available Rides board · Read-only "riders in your area" view · Trip flow controls and in-trip chat · Earnings dashboard, wallet, and payout requests.</p>
+          <p><strong>Rider:</strong> Map-based booking with address search, quick-pick landmarks, saved places, and shareable community pins · Upfront, distance-based fare estimates · Any-driver or choose-your-driver booking modes · Live trip tracking, in-trip chat, SOS button, and post-trip "report a problem" · Ride history, receipts, ratings, tips and promo codes.</p>
+          <p><strong>Driver:</strong> Onboarding with license and vehicle-document verification · Online/offline toggle, live location sharing, Available Rides board · Read-only "riders in your area" view · Trip flow controls and in-trip chat · Earnings dashboard and trip history.</p>
           <p><strong>Admin:</strong> Driver approval and document review · service-area and pricing configuration per vehicle type · Ride, user, promo code, payout, safety-incident and report oversight · Community-pin moderation and a launch-readiness checklist.</p>
 
           <h2>6. Technology and trust</h2>
