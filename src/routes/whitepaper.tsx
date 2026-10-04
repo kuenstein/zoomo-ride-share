@@ -18,15 +18,9 @@ export const Route = createFileRoute("/whitepaper")({
   component: WhitepaperPage,
 });
 
-const pricing = [
-  ["Tricycle", "₱20 (admin-configurable)", "₱20 / km", "₱20"],
-  ["Motorcycle (habal-habal)", "₱20 (admin-configurable)", "₱20 / km", "₱20"],
-];
-
 const limitations = [
-  ["QR Ph wallet top-ups", "Pending PayMongo activation", "Use Cash during early beta until QR Ph is confirmed live."],
-  ["Push notifications", "Pending VAPID key setup", "Keep the app open/foregrounded to catch new requests."],
-  ["Map & address search", "Free OpenStreetMap tier", "Fine for beta traffic; a paid provider is needed before public launch."],
+  ["Push notifications", "Pending activation", "Keep the app open/foregrounded to catch new requests."],
+  ["Map & address search", "Using a free-tier mapping service", "Fine for beta traffic; a paid provider is needed before public launch."],
   ["Terms & Privacy pages", "Template text, not yet reviewed by a lawyer", "Do not treat as final legal copy."],
   ["Driver supply", "Small pool of approved test drivers", "Matching times in beta won't reflect a real launch."],
 ];
@@ -55,7 +49,7 @@ function WhitepaperPage() {
             <Printer aria-hidden="true" className="mr-2 h-4 w-4" />Print / Save as PDF
           </Button>
         </div>
-        <p className="mb-10 text-sm text-muted-foreground"><strong className="text-foreground">Document status:</strong> Internal / Beta — not for public distribution · <strong className="text-foreground">Date:</strong> October 2026 · <strong className="text-foreground">Version:</strong> 1.0 (Beta)</p>
+        <p className="mb-10 text-sm text-muted-foreground"><strong className="text-foreground">Document status:</strong> Internal / Beta — not for public distribution · <strong className="text-foreground">Date:</strong> October 2026 · <strong className="text-foreground">Version:</strong> 1.1 (Beta)</p>
 
         <article className="whitepaper-body space-y-5 text-[15px] leading-7 [&_h2]:pt-7 [&_h2]:text-2xl [&_h2]:font-bold [&_h3]:pt-3 [&_h3]:text-lg [&_h3]:font-semibold [&_li]:pl-1 [&_li]:marker:text-accent [&_p]:text-foreground">
           <h2>1. Executive summary</h2>
